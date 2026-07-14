@@ -34,12 +34,18 @@
             {% endfor %}
         </select>
     </label>
+    <label>с <input type="datetime-local" name="from" value="{{ time.from|default('') }}"></label>
+    <label>по <input type="datetime-local" name="to" value="{{ time.to|default('') }}"></label>
+    <button>Применить</button>
+    {% if time.from is defined or time.to is defined %}
+        <a href="{{ path('app_page_index', {event_type: event_type}) }}">сбросить период</a>
+    {% endif %}
     <span class="muted">страница {{ page + 1 }} из {{ max(pages, 1) }}</span>
     {% if page > 0 %}
-        <a href="{{ path('app_page_index', {page: page - 1, event_type: event_type}) }}">← новее</a>
+        <a href="{{ path('app_page_index', {page: page - 1, event_type: event_type}|merge(time)) }}">← новее</a>
     {% endif %}
     {% if page + 1 < pages %}
-        <a href="{{ path('app_page_index', {page: page + 1, event_type: event_type}) }}">старше →</a>
+        <a href="{{ path('app_page_index', {page: page + 1, event_type: event_type}|merge(time)) }}">старше →</a>
     {% endif %}
 </form>
 
@@ -52,7 +58,7 @@
     </thead>
     <tbody>
     {% for e in events %}
-        <tr onclick="location.href='{{ path('app_page_event', {id: e.event_id}) }}'">
+        <tr onclick="location.href='{{ path('app_page_event', {id: e.event_id}|merge(time)) }}'">
             <td>{{ e.event_time }}</td>
             <td>{{ e.event_type }}</td>
             <td>{{ e.vehicle_id }}</td>

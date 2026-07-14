@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Schema;
 use App\Service\ClickHouse;
+use App\TimeFilter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,9 +25,15 @@ class PageController extends AbstractController
     {
         $page = max(0, $request->query->getInt('page', 0));
         $eventType = (string) $request->query->get('event_type', '');
+        $time = TimeFilter::fromRequest($request);
 
-        $whereSql = '' !== $eventType ? 'WHERE event_type = {event_type:String}' : '';
-        $params = '' !== $eventType ? ['event_type' => $eventType] : [];
+        $where = $time->conditions();
+        $params = $time->params();
+        if ('' !== $eventType) {
+            $where[] = 'event_type = {event_type:String}';
+            $params['event_type'] = $eventType;
+        }
+        $whereSql = $where ? 'WHERE '.implode(' AND ', $where) : '';
 
         $events = $this->clickHouse->select(
             "SELECT * FROM events {$whereSql}
@@ -42,6 +49,7 @@ class PageController extends AbstractController
             'page' => $page,
             'pages' => (int) ceil($total / self::PAGE_SIZE),
             'event_type' => $eventType,
+            'time' => $time->queryParams(),
             'stats' => $this->storageStats(),
         ]);
     }
@@ -111,6 +119,7 @@ class PageController extends AbstractController
             'similar_by' => $similarBy,
             'dimensions' => Schema::DIMENSIONS,
             'chart_fields' => $chartFields,
+            'time' => TimeFilter::fromRequest($request)->queryParams(),
         ]);
     }
 }

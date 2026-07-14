@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Schema;
 use App\Service\ClickHouse;
+use App\TimeFilter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,8 +27,9 @@ class ApiController extends AbstractController
         $limit = min(200, max(1, $request->query->getInt('limit', 50)));
         $offset = max(0, $request->query->getInt('offset', 0));
 
-        $where = [];
-        $params = [];
+        $time = TimeFilter::fromRequest($request);
+        $where = $time->conditions();
+        $params = $time->params();
         foreach (self::LIST_FILTERS as $field) {
             $value = (string) $request->query->get($field, '');
             if ('' !== $value) {
@@ -73,17 +75,23 @@ class ApiController extends AbstractController
         $event = $this->fetchEvent($id);
         $similarValue = (string) $event[$similarBy];
 
-        [$labels, $similar, $other] = Schema::isDimension($field)
-            ? $this->dimensionCounts($field, $similarBy, $similarValue)
-            : $this->metricHistogram($field, $similarBy, $similarValue);
+        // Период сужает обе группы и позволяет отсекать гранулы по первичному
+        // индексу (event_time — первый в ORDER BY таблицы)
+        $time = TimeFilter::fromRequest($request);
+        $whereSql = $time->conditions() ? 'WHERE '.implode(' AND ', $time->conditions()) : '';
+        $timeParams = $time->params();
 
-        // Итоги по всей таблице, а не по попавшим на график корзинам: у
+        [$labels, $similar, $other] = Schema::isDimension($field)
+            ? $this->dimensionCounts($field, $similarBy, $similarValue, $whereSql, $timeParams)
+            : $this->metricHistogram($field, $similarBy, $similarValue, $whereSql, $timeParams);
+
+        // Итоги по всей выборке, а не по попавшим на график корзинам: у
         // dimension-графиков LIMIT 20, и проценты должны быть долей от группы
         $totals = $this->clickHouse->select(
             "SELECT countIf({$similarBy} = {val:String}) AS similar,
                     countIf({$similarBy} != {val:String}) AS other
-             FROM events",
-            ['val' => $similarValue],
+             FROM events {$whereSql}",
+            $timeParams + ['val' => $similarValue],
         )[0];
         $similarTotal = (int) $totals['similar'];
         $otherTotal = (int) $totals['other'];
@@ -120,18 +128,18 @@ class ApiController extends AbstractController
     }
 
     /** @return array{list<string>, list<int>, list<int>} */
-    private function dimensionCounts(string $field, string $similarBy, string $similarValue): array
+    private function dimensionCounts(string $field, string $similarBy, string $similarValue, string $whereSql, array $timeParams): array
     {
         // $field и $similarBy уже проверены по белому списку Schema
         $rows = $this->clickHouse->select(
             "SELECT {$field} AS label,
                     countIf({$similarBy} = {val:String}) AS similar,
                     countIf({$similarBy} != {val:String}) AS other
-             FROM events
+             FROM events {$whereSql}
              GROUP BY label
              ORDER BY similar + other DESC
              LIMIT 20",
-            ['val' => $similarValue],
+            $timeParams + ['val' => $similarValue],
         );
 
         return [
@@ -142,20 +150,20 @@ class ApiController extends AbstractController
     }
 
     /** @return array{list<string>, list<int>, list<int>} */
-    private function metricHistogram(string $field, string $similarBy, string $similarValue): array
+    private function metricHistogram(string $field, string $similarBy, string $similarValue, string $whereSql, array $timeParams): array
     {
         $n = self::HISTOGRAM_BUCKETS;
         $rows = $this->clickHouse->select(
-            "WITH (SELECT min({$field}) FROM events) AS mn,
-                  (SELECT max({$field}) FROM events) AS mx
+            "WITH (SELECT min({$field}) FROM events {$whereSql}) AS mn,
+                  (SELECT max({$field}) FROM events {$whereSql}) AS mx
              SELECT widthBucket({$field}, mn, mx + 0.001, {$n}) AS bucket,
                     any(mn) AS mn_, any(mx) AS mx_,
                     countIf({$similarBy} = {val:String}) AS similar,
                     countIf({$similarBy} != {val:String}) AS other
-             FROM events
+             FROM events {$whereSql}
              GROUP BY bucket
              ORDER BY bucket",
-            ['val' => $similarValue],
+            $timeParams + ['val' => $similarValue],
         );
 
         $min = $rows ? (float) $rows[0]['mn_'] : 0.0;

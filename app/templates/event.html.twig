@@ -13,7 +13,7 @@
 
 <div class="toolbar">
     <label>Похожие = события, где совпадает
-        <select onchange="location.href='?similar_by=' + this.value">
+        <select onchange="const p = new URLSearchParams(location.search); p.set('similar_by', this.value); location.search = p">
             {% for d in dimensions %}
                 <option value="{{ d }}" {{ d == similar_by ? 'selected' }}>{{ d }} = {{ event[d] }}</option>
             {% endfor %}
@@ -22,12 +22,18 @@
     <span class="muted">
         <span style="color:#b45309">■</span> похожие ({{ similar_by }} = {{ event[similar_by] }})
         &nbsp;<span style="color:#5b8cc4">■</span> все остальные
+        {% if time.from is defined or time.to is defined %}
+            &nbsp;·&nbsp; период: {{ time.from|default('…') }} — {{ time.to|default('…') }}
+            (<a href="{{ path('app_page_event', {id: event.event_id, similar_by: similar_by}) }}">сбросить</a>)
+        {% endif %}
     </span>
 </div>
 
 <div class="charts" id="charts"
      data-event-id="{{ event.event_id }}"
      data-similar-by="{{ similar_by }}"
+     data-from="{{ time.from|default('') }}"
+     data-to="{{ time.to|default('') }}"
      data-fields="{{ chart_fields|join(',') }}">
     {% for field in chart_fields %}
         <figure>
