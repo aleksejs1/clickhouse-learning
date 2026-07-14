@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% set event_types = ['gps_ping', 'trip_start', 'trip_end', 'refuel', 'harsh_braking', 'speeding', 'idle', 'engine_fault'] %}
+
+{% block content %}
+<h1>События <span class="muted">({{ total }})</span></h1>
+
+<form class="toolbar" method="get">
+    <label>Тип события:
+        <select name="event_type" onchange="this.form.submit()">
+            <option value="">— все —</option>
+            {% for t in event_types %}
+                <option value="{{ t }}" {{ t == event_type ? 'selected' }}>{{ t }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <span class="muted">страница {{ page + 1 }} из {{ max(pages, 1) }}</span>
+    {% if page > 0 %}
+        <a href="{{ path('app_page_index', {page: page - 1, event_type: event_type}) }}">← новее</a>
+    {% endif %}
+    {% if page + 1 < pages %}
+        <a href="{{ path('app_page_index', {page: page + 1, event_type: event_type}) }}">старше →</a>
+    {% endif %}
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>event_time</th><th>event_type</th><th>vehicle_id</th><th>driver_id</th>
+        <th>route_id</th><th>region</th><th>speed_kmh</th><th>fuel_consumption_l100</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for e in events %}
+        <tr onclick="location.href='{{ path('app_page_event', {id: e.event_id}) }}'">
+            <td>{{ e.event_time }}</td>
+            <td>{{ e.event_type }}</td>
+            <td>{{ e.vehicle_id }}</td>
+            <td>{{ e.driver_id }}</td>
+            <td>{{ e.route_id }}</td>
+            <td>{{ e.region }}</td>
+            <td>{{ e.speed_kmh }}</td>
+            <td>{{ e.fuel_consumption_l100 }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="8" class="muted">Нет данных — запустите app:generate-events</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

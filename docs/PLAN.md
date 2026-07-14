@@ -178,7 +178,7 @@ curl -s -o /dev/null -w '%{http_code}' 'http://localhost:8081/api/events/0000000
       (меняет query-параметр), CSS-grid с `<canvas>` на каждое поле, данные для
       JS — в data-атрибутах контейнера (API.md §4)
 - [ ] 6.4 `public/app.js`: параллельные `fetch` по всем полям, Chart.js `bar`
-      с двумя dataset'ами (`#f59e0b` similar / `#94a3b8` other), ось Y — проценты,
+      с двумя dataset'ами (`#f59e0b` similar / `#5b8cc4` other), ось Y — проценты,
       подписи «similar (N=…)» / «other (N=…)»
 
 **Проверка:**

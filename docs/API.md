@@ -134,7 +134,7 @@ ORDER BY bucket
 - для каждого поля делает `fetch('/api/events/{id}/chart/{field}?similar_by=…')`
   параллельно;
 - рисует Chart.js `bar`-график: два dataset'а —
-  «similar (N=…)» цветом `#f59e0b` (янтарный) и «other (N=…)» цветом `#94a3b8`
+  «similar (N=…)» цветом `#f59e0b` (янтарный) и «other (N=…)» цветом `#5b8cc4`
   (серо-голубой), ось Y — проценты.
 
 Chart.js подключается в `base.html.twig` одной строкой с CDN

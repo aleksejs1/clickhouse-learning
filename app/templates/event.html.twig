@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ event.event_type }} · {{ event.event_time }}{% endblock %}
+
+{% block content %}
+<h1>{{ event.event_type }} <span class="muted">· {{ event.event_time }} · {{ event.vehicle_id }}</span></h1>
+
+<dl class="event-card">
+    {% for key, value in event %}
+        <div><dt>{{ key }}</dt><dd>{{ value }}</dd></div>
+    {% endfor %}
+</dl>
+
+<div class="toolbar">
+    <label>Похожие = события, где совпадает
+        <select onchange="location.href='?similar_by=' + this.value">
+            {% for d in dimensions %}
+                <option value="{{ d }}" {{ d == similar_by ? 'selected' }}>{{ d }} = {{ event[d] }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <span class="muted">
+        <span style="color:#b45309">■</span> похожие ({{ similar_by }} = {{ event[similar_by] }})
+        &nbsp;<span style="color:#5b8cc4">■</span> все остальные
+    </span>
+</div>
+
+<div class="charts" id="charts"
+     data-event-id="{{ event.event_id }}"
+     data-similar-by="{{ similar_by }}"
+     data-fields="{{ chart_fields|join(',') }}">
+    {% for field in chart_fields %}
+        <figure>
+            <figcaption>{{ field }}</figcaption>
+            <canvas id="chart-{{ field }}"></canvas>
+        </figure>
+    {% endfor %}
+</div>
+
+<script src="/app.js"></script>
+{% endblock %}
