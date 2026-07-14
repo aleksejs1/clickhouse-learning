@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Аномалии · Fleet Telemetry Explorer{% endblock %}
+
+{% block content %}
+<h1>Автопоиск аномалий</h1>
+
+<p class="muted">
+    Все пары «измерение × метрика» за один проход по таблице
+    (<code>GROUP BY GROUPING SETS</code>): группы, чьё среднее значение метрики
+    сильнее всего отклоняется от глобального. Сверху — и заложенные аномалии,
+    и «структурные» корреляции (например, нулевая скорость у стоящих машин) —
+    отличать одни от других и есть работа аналитика.
+    {% set scanned = queries|reduce((s, q) => s + q.read_rows, 0) %}
+    {% set ms = queries|reduce((s, q) => s + q.elapsed_ms, 0) %}
+    Просканировано {{ scanned|number_format(0, '.', ' ') }} строк за {{ ms|number_format(0) }} мс.
+</p>
+
+<form class="toolbar" method="get">
+    <label>с <input type="datetime-local" name="from" value="{{ time.from|default('') }}"></label>
+    <label>по <input type="datetime-local" name="to" value="{{ time.to|default('') }}"></label>
+    <button>Применить</button>
+    {% if time.from is defined or time.to is defined %}
+        <a href="{{ path('app_page_anomalies') }}">сбросить период</a>
+    {% endif %}
+    <span class="muted">событий в выборке: {{ total|number_format(0, '.', ' ') }}</span>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>группа</th>
+        <th>метрика</th>
+        <th>среднее группы</th>
+        <th>среднее всех</th>
+        <th>отклонение</th>
+        <th>N событий</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for f in findings %}
+        <tr>
+            <td><b>{{ f.dimension }} = {{ f.value }}</b></td>
+            <td>{{ f.metric }}</td>
+            <td><b>{{ f.group_avg }}</b></td>
+            <td class="muted">{{ f.global_avg }}</td>
+            <td>
+                {{ f.sigma }}σ
+                {% if f.ratio is not null %}<span class="muted">(×{{ f.ratio }})</span>{% endif %}
+            </td>
+            <td class="muted">{{ f.n|number_format(0, '.', ' ') }}</td>
+            <td><a href="{{ path('app_page_explore', {dimension: f.dimension, value: f.value}|merge(time)) }}">исследовать →</a></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="7" class="muted">Отклонений не найдено</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

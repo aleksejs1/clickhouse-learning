@@ -167,6 +167,7 @@ symfony/yaml               symfony/uid
 | Одно событие (JSON) | `GET /api/events/{id}` |
 | Данные одного графика (JSON) | `GET /api/chart/{field}?similar_by={dim}&value={val}` |
 | Гео-распределение для карты (JSON) | `GET /api/map?similar_by={dim}&value={val}` |
+| Автопоиск аномалий (HTML) | `GET /anomalies` |
 
 ## 7. Команда генерации данных
 

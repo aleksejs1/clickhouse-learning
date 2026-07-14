@@ -15,6 +15,8 @@ class PageController extends AbstractController
 {
     private const PAGE_SIZE = 50;
     private const DEFAULT_SIMILAR_BY = 'vehicle_id';
+    private const ANOMALY_MIN_GROUP = 1000; // мелкие группы шумят
+    private const ANOMALY_MIN_SIGMA = 0.1;
 
     public function __construct(private ClickHouse $clickHouse)
     {
@@ -65,6 +67,130 @@ class PageController extends AbstractController
             'timeline_stat' => $timelineStat,
             'stats' => $this->storageStats(),
         ]);
+    }
+
+    /**
+     * Автопоиск аномалий: BubbleUp без выбора события. Один проход по таблице
+     * через GROUP BY GROUPING SETS ((dim1),(dim2),…) даёт средние всех метрик
+     * для всех групп всех измерений; PHP сравнивает каждую группу с глобальным
+     * средним в сигмах (|group_avg − global_avg| / stddev). См. docs/API.md §5.
+     */
+    #[Route('/anomalies', methods: ['GET'])]
+    public function anomalies(Request $request): Response
+    {
+        $time = TimeFilter::fromRequest($request);
+        $whereSql = $time->conditions() ? 'WHERE '.implode(' AND ', $time->conditions()) : '';
+        $params = $time->params();
+
+        $avgCols = implode(', ', array_map(
+            static fn (string $m): string => "avg({$m}) AS avg_{$m}",
+            Schema::METRICS,
+        ));
+        $stdCols = implode(', ', array_map(
+            static fn (string $m): string => "stddevPop({$m}) AS std_{$m}",
+            Schema::METRICS,
+        ));
+        $global = $this->clickHouse->select(
+            "SELECT count() AS n, {$avgCols}, {$stdCols} FROM events {$whereSql}",
+            $params,
+        )[0];
+
+        $sets = implode(', ', array_map(static fn (string $d): string => "({$d})", Schema::DIMENSIONS));
+        $groups = $this->clickHouse->select(
+            'SELECT '.implode(', ', Schema::DIMENSIONS).", count() AS n, {$avgCols}
+             FROM events {$whereSql}
+             GROUP BY GROUPING SETS ({$sets})",
+            $params,
+        );
+
+        $findings = [];
+        foreach ($groups as $group) {
+            if ((int) $group['n'] < self::ANOMALY_MIN_GROUP) {
+                continue;
+            }
+            // в строке GROUPING SETS сгруппировано ровно одно измерение —
+            // остальные приходят пустыми (у нас пустых значений не бывает)
+            $dimension = null;
+            foreach (Schema::DIMENSIONS as $d) {
+                if ('' !== $group[$d]) {
+                    $dimension = $d;
+                    break;
+                }
+            }
+            if (null === $dimension) {
+                continue;
+            }
+
+            foreach (Schema::METRICS as $m) {
+                $std = (float) $global["std_{$m}"];
+                $globalAvg = (float) $global["avg_{$m}"];
+                $groupAvg = (float) $group["avg_{$m}"];
+                if ($std <= 0) {
+                    continue;
+                }
+                $sigma = abs($groupAvg - $globalAvg) / $std;
+                if ($sigma < self::ANOMALY_MIN_SIGMA) {
+                    continue;
+                }
+                $findings[] = [
+                    'dimension' => $dimension,
+                    'value' => $group[$dimension],
+                    'metric' => $m,
+                    'group_avg' => round($groupAvg, 2),
+                    'global_avg' => round($globalAvg, 2),
+                    'ratio' => abs($globalAvg) > 1e-9 ? round($groupAvg / $globalAvg, 2) : null,
+                    'sigma' => round($sigma, 2),
+                    'n' => (int) $group['n'],
+                ];
+            }
+        }
+        usort($findings, static fn (array $a, array $b): int => $b['sigma'] <=> $a['sigma']);
+
+        // Не больше 3 значений на пару измерение×метрика: иначе структурные
+        // корреляции (все 11 фургонов экономичнее грузовиков) вытесняют всё
+        $perPair = [];
+        $findings = array_values(array_filter($findings, static function (array $f) use (&$perPair): bool {
+            $key = $f['dimension'].'|'.$f['metric'];
+            $perPair[$key] = ($perPair[$key] ?? 0) + 1;
+
+            return $perPair[$key] <= 3;
+        }));
+
+        return $this->render('anomalies.html.twig', [
+            'findings' => \array_slice($findings, 0, 60),
+            'total' => (int) $global['n'],
+            'time' => $time->queryParams(),
+            'queries' => $this->clickHouse->queryLog(),
+        ]);
+    }
+
+    /**
+     * Переход из таблицы аномалий к исследованию: находит свежее событие
+     * группы и открывает его страницу с нужным измерением сходства.
+     */
+    #[Route('/explore/{dimension}/{value}', methods: ['GET'])]
+    public function explore(string $dimension, string $value, Request $request): Response
+    {
+        if (!Schema::isDimension($dimension)) {
+            throw $this->createNotFoundException();
+        }
+        $time = TimeFilter::fromRequest($request);
+        $where = [...$time->conditions(), "{$dimension} = {value:String}"];
+
+        $rows = $this->clickHouse->select(
+            'SELECT toString(event_id) AS id FROM events
+             WHERE '.implode(' AND ', $where).'
+             ORDER BY event_time DESC LIMIT 1',
+            $time->params() + ['value' => $value],
+        );
+        if (!$rows) {
+            throw $this->createNotFoundException();
+        }
+
+        return $this->redirectToRoute('app_page_event', [
+            'id' => $rows[0]['id'],
+            'similar_by' => $dimension,
+        ] + $time->queryParams());
     }
 
     /**
