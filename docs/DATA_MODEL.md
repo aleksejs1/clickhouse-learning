@@ -92,7 +92,7 @@ ORDER BY (event_time, event_id);
 | # | Условие | Эффект | Как увидеть в UI |
 |---|---|---|---|
 | A1 | `last_fuel_station_id = 'FS-07'` | `fuel_consumption_l100` × 1.20 (плохое топливо) | Открыть любое событие, сходство = `last_fuel_station_id`: у FS-07 гистограмма расхода сдвинута вправо |
-| A2 | `driver_id = 'D-13'` | `harsh_events_cnt` + 2, `speed_kmh` × 1.15 | Сходство = `driver_id`: у D-13 больше `harsh_braking`/`speeding` и выше скорость |
+| A2 | `driver_id = 'D-13'` | `harsh_events_cnt` + 2, `speed_kmh` × 1.15; 20% его `gps_ping` заменяются на `harsh_braking`/`speeding` | Сходство = `driver_id`: у D-13 больше `harsh_braking`/`speeding` и выше скорость |
 | A3 | `route_id = 'R-04'` | `speed_kmh` × 0.7, `trip_duration_min` × 1.5 (разбитая дорога) | Сходство = `route_id` |
 | A4 | `vehicle_make = 'daf'` и `ambient_temp_c > 20` | `engine_temp_c` + 8 (слабое охлаждение) | Сходство = `vehicle_make` на летних событиях |
 
