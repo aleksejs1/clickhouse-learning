@@ -30,8 +30,8 @@
 </div>
 
 <div class="charts" id="charts"
-     data-event-id="{{ event.event_id }}"
      data-similar-by="{{ similar_by }}"
+     data-similar-value="{{ event[similar_by] }}"
      data-from="{{ time.from|default('') }}"
      data-to="{{ time.to|default('') }}"
      data-fields="{{ chart_fields|join(',') }}">

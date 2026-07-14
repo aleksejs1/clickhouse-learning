@@ -3,8 +3,8 @@
 const COLOR_SIMILAR = '#f59e0b';
 const COLOR_OTHER = '#5b8cc4';
 
-async function drawChart(eventId, params, field) {
-    const resp = await fetch(`/api/events/${eventId}/chart/${field}?${params}`);
+async function drawChart(params, field) {
+    const resp = await fetch(`/api/chart/${field}?${params}`);
     if (!resp.ok) {
         throw new Error(`${field}: HTTP ${resp.status}`);
     }
@@ -49,11 +49,11 @@ async function drawChart(eventId, params, field) {
 
 const root = document.getElementById('charts');
 if (root) {
-    const { eventId, similarBy, from, to, fields } = root.dataset;
-    const params = new URLSearchParams({ similar_by: similarBy });
+    const { similarBy, similarValue, from, to, fields } = root.dataset;
+    const params = new URLSearchParams({ similar_by: similarBy, value: similarValue });
     if (from) params.set('from', from);
     if (to) params.set('to', to);
     for (const field of fields.split(',')) {
-        drawChart(eventId, params, field).catch(console.error);
+        drawChart(params, field).catch(console.error);
     }
 }

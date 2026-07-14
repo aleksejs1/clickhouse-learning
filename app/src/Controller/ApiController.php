@@ -58,11 +58,13 @@ class ApiController extends AbstractController
 
     /**
      * Данные одного графика: распределение поля $field среди «похожих»
-     * (то же значение измерения similar_by, что у события $id) и «остальных».
+     * (similar_by = value) и «остальных». Событие здесь не нужно — страница
+     * передаёт значение сама, иначе каждый из ~20 параллельных chart-запросов
+     * заново искал бы событие полным сканом по UUID.
      * См. docs/API.md §3.
      */
-    #[Route('/events/{id}/chart/{field}', methods: ['GET'])]
-    public function chart(string $id, string $field, Request $request): JsonResponse
+    #[Route('/chart/{field}', methods: ['GET'])]
+    public function chart(string $field, Request $request): JsonResponse
     {
         $similarBy = (string) $request->query->get('similar_by', '');
         if (!Schema::isDimension($similarBy)) {
@@ -71,9 +73,10 @@ class ApiController extends AbstractController
         if ($field === $similarBy || (!Schema::isDimension($field) && !Schema::isMetric($field))) {
             return $this->json(['error' => 'invalid field'], 400);
         }
-
-        $event = $this->fetchEvent($id);
-        $similarValue = (string) $event[$similarBy];
+        $similarValue = $request->query->get('value');
+        if (null === $similarValue) {
+            return $this->json(['error' => 'value query parameter is required'], 400);
+        }
 
         // Период сужает обе группы и позволяет отсекать гранулы по первичному
         // индексу (event_time — первый в ORDER BY таблицы)
