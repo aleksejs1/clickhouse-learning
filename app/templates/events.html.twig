@@ -26,7 +26,11 @@
 </div>
 
 <figure class="timeline">
-    <figcaption>События по часам{{ event_type ? ' · ' ~ event_type }} — выделите диапазон мышью, чтобы задать период</figcaption>
+    <figcaption>События по часам{{ event_type ? ' · ' ~ event_type }} — выделите диапазон мышью, чтобы задать период
+        <span class="muted" style="font-weight: 400">· MV events_by_hour: прочитано
+            {{ timeline_stat.read_rows|number_format(0, '.', ' ') }} строк вместо
+            {{ stats.rows|number_format(0, '.', ' ') }} · {{ timeline_stat.elapsed_ms }} мс</span>
+    </figcaption>
     <div>
         <canvas id="timeline"
                 data-points="{{ timeline|json_encode }}"

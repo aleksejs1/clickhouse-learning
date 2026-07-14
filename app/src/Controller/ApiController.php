@@ -112,6 +112,7 @@ class ApiController extends AbstractController
             'similar_pct' => $similarPct,
             'other_pct' => $otherPct,
             'divergence' => $this->divergence($similarPct, $otherPct, $similarTotal, $otherTotal),
+            'queries' => $this->clickHouse->queryLog(),
         ]);
     }
 

@@ -52,6 +52,7 @@ class PageController extends AbstractController
              ORDER BY hour',
             '' !== $eventType ? ['event_type' => $eventType] : [],
         );
+        $timelineStat = array_slice($this->clickHouse->queryLog(), -1)[0];
 
         return $this->render('events.html.twig', [
             'events' => $events,
@@ -61,6 +62,7 @@ class PageController extends AbstractController
             'event_type' => $eventType,
             'time' => $time->queryParams(),
             'timeline' => $timeline,
+            'timeline_stat' => $timelineStat,
             'stats' => $this->storageStats(),
         ]);
     }

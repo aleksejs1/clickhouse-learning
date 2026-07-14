@@ -12,6 +12,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class ClickHouse
 {
+    /** @var list<array{sql: string, params: array, read_rows: int, read_bytes: int, total_rows: int, elapsed_ms: float}> */
+    private array $queryLog = [];
+
     public function __construct(
         private HttpClientInterface $client,
         private string $url,
@@ -29,9 +32,21 @@ class ClickHouse
             $query['param_'.$name] = $value;
         }
 
-        $body = $this->request($query, $sql);
+        $body = $this->request($query, $sql, $params);
 
         return json_decode($body, true, flags: JSON_THROW_ON_ERROR)['data'];
+    }
+
+    /**
+     * Все SELECT-ы текущего запроса со статистикой выполнения из заголовка
+     * X-ClickHouse-Summary — «сколько строк прочитано и за сколько мс».
+     * UI показывает это под графиками (docs/API.md §3).
+     *
+     * @return list<array{sql: string, params: array, read_rows: int, read_bytes: int, total_rows: int, elapsed_ms: float}>
+     */
+    public function queryLog(): array
+    {
+        return $this->queryLog;
     }
 
     /** @param iterable<array<string, mixed>> $rows */
@@ -48,7 +63,7 @@ class ClickHouse
         $this->request(['query' => "INSERT INTO {$table} FORMAT JSONEachRow"], $body);
     }
 
-    private function request(array $query, string $body): string
+    private function request(array $query, string $body, ?array $logParams = null): string
     {
         $response = $this->client->request('POST', $this->url, [
             'query' => $query + ['database' => $this->database],
@@ -61,6 +76,21 @@ class ClickHouse
 
         if (200 !== $response->getStatusCode()) {
             throw new \RuntimeException('ClickHouse error: '.$response->getContent(false));
+        }
+
+        if (null !== $logParams) {
+            $summary = json_decode(
+                $response->getHeaders()['x-clickhouse-summary'][0] ?? '{}',
+                true,
+            ) ?? [];
+            $this->queryLog[] = [
+                'sql' => trim(preg_replace('/\s+/', ' ', $body)),
+                'params' => $logParams,
+                'read_rows' => (int) ($summary['read_rows'] ?? 0),
+                'read_bytes' => (int) ($summary['read_bytes'] ?? 0),
+                'total_rows' => (int) ($summary['total_rows_to_read'] ?? 0),
+                'elapsed_ms' => round((float) ($summary['elapsed_ns'] ?? 0) / 1e6, 1),
+            ];
         }
 
         return $response->getContent();

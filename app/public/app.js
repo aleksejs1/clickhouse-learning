@@ -5,6 +5,9 @@ const COLOR_SIMILAR = '#f59e0b';
 const COLOR_OTHER = '#5b8cc4';
 const COLOR_MUTED = '#cbd5e1';
 
+const fmtRows = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M'
+    : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n));
+
 /* --- Таймлайн: события по часам, выделение диапазона мышью задаёт период --- */
 
 function initTimeline(canvas) {
@@ -90,8 +93,23 @@ async function drawChart(params, field) {
     const d = await resp.json();
 
     const canvas = document.getElementById(`chart-${field}`);
-    canvas.closest('figure').querySelector('figcaption').textContent
-        = `${field} · Δ ${d.divergence}%`;
+    const figure = canvas.closest('figure');
+    figure.querySelector('figcaption').textContent = `${field} · Δ ${d.divergence}%`;
+
+    // Панель «как выполнился запрос»: данные из заголовков X-ClickHouse-Summary
+    const read = d.queries.reduce((s, q) => s + q.read_rows, 0);
+    const ms = d.queries.reduce((s, q) => s + q.elapsed_ms, 0);
+    const details = document.createElement('details');
+    details.className = 'chart-stats';
+    const summary = document.createElement('summary');
+    summary.textContent = `прочитано ${fmtRows(read)} строк · ${ms.toFixed(1)} мс · ${d.queries.length} SQL`;
+    const pre = document.createElement('pre');
+    pre.textContent = d.queries
+        .map((q) => `-- ${q.elapsed_ms} мс · прочитано ${fmtRows(q.read_rows)} строк\n`
+            + `${q.sql}\n-- параметры: ${JSON.stringify(q.params)}`)
+        .join('\n\n');
+    details.append(summary, pre);
+    figure.append(details);
 
     new Chart(canvas, {
         type: 'bar',
