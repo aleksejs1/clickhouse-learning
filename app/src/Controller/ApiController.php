@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Schema;
 use App\Service\ClickHouse;
+use App\Sampling;
 use App\TimeFilter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -39,9 +40,12 @@ class ApiController extends AbstractController
         }
         $whereSql = $where ? 'WHERE '.implode(' AND ', $where) : '';
 
+        // toStartOfHour первым — это префикс сортировочного ключа таблицы:
+        // ClickHouse читает в порядке ключа и останавливается на LIMIT,
+        // а не сортирует все строки (порядок результата тот же)
         $items = $this->clickHouse->select(
             "SELECT * FROM events {$whereSql}
-             ORDER BY event_time DESC
+             ORDER BY toStartOfHour(event_time) DESC, event_time DESC
              LIMIT {limit:UInt32} OFFSET {offset:UInt32}",
             $params + ['limit' => $limit, 'offset' => $offset],
         );
@@ -79,16 +83,23 @@ class ApiController extends AbstractController
         }
 
         // Период сужает обе группы и позволяет отсекать гранулы по первичному
-        // индексу (event_time — первый в ORDER BY таблицы)
+        // индексу (event_time — первый в ORDER BY таблицы); сэмплирование
+        // читает долю строк по ключу SAMPLE BY, счётчики домножаются обратно
         $time = TimeFilter::fromRequest($request);
-        $whereSql = $time->conditions() ? 'WHERE '.implode(' AND ', $time->conditions()) : '';
+        $sampling = Sampling::fromRequest($request);
+        $fromTail = trim($sampling->sql().' '.($time->conditions() ? 'WHERE '.implode(' AND ', $time->conditions()) : ''));
         $timeParams = $time->params();
 
         [$labels, $similar, $other] = Schema::isDimension($field)
-            ? $this->dimensionCounts($field, $similarBy, $similarValue, $whereSql, $timeParams)
-            : $this->metricHistogram($field, $similarBy, $similarValue, $whereSql, $timeParams);
+            ? $this->dimensionCounts($field, $similarBy, $similarValue, $fromTail, $timeParams)
+            : $this->metricHistogram($field, $similarBy, $similarValue, $fromTail, $timeParams);
 
-        [$similarTotal, $otherTotal] = $this->groupTotals($similarBy, $similarValue, $whereSql, $timeParams);
+        [$similarTotal, $otherTotal] = $this->groupTotals($similarBy, $similarValue, $fromTail, $timeParams);
+        if ($sampling->isActive()) {
+            $scale = static fn (int $c): int => (int) round($c * $sampling->scale());
+            [$similar, $other] = [array_map($scale, $similar), array_map($scale, $other)];
+            [$similarTotal, $otherTotal] = [$scale($similarTotal), $scale($otherTotal)];
+        }
         $similarPct = $this->toPercent($similar, $similarTotal);
         $otherPct = $this->toPercent($other, $otherTotal);
 
@@ -97,6 +108,7 @@ class ApiController extends AbstractController
             'kind' => Schema::isDimension($field) ? 'dimension' : 'metric',
             'similar_by' => $similarBy,
             'similar_value' => $similarValue,
+            'sample' => $sampling->isActive() ? (float) $sampling->rate : 1,
             'similar_total' => $similarTotal,
             'other_total' => $otherTotal,
             'labels' => $labels,
@@ -124,31 +136,34 @@ class ApiController extends AbstractController
         }
 
         $time = TimeFilter::fromRequest($request);
-        $whereSql = $time->conditions() ? 'WHERE '.implode(' AND ', $time->conditions()) : '';
+        $sampling = Sampling::fromRequest($request);
+        $fromTail = trim($sampling->sql().' '.($time->conditions() ? 'WHERE '.implode(' AND ', $time->conditions()) : ''));
         $timeParams = $time->params();
 
         $cells = $this->clickHouse->select(
             "SELECT round(lat, 2) AS lat, round(lon, 2) AS lon,
                     countIf({$similarBy} = {val:String}) AS similar,
                     countIf({$similarBy} != {val:String}) AS other
-             FROM events {$whereSql}
+             FROM events {$fromTail}
              GROUP BY lat, lon
              ORDER BY similar + other DESC
              LIMIT 4000",
             $timeParams + ['val' => $similarValue],
         );
-        [$similarTotal, $otherTotal] = $this->groupTotals($similarBy, $similarValue, $whereSql, $timeParams);
+        [$similarTotal, $otherTotal] = $this->groupTotals($similarBy, $similarValue, $fromTail, $timeParams);
+        $scale = $sampling->scale();
 
         return $this->json([
             'similar_by' => $similarBy,
             'similar_value' => $similarValue,
-            'similar_total' => $similarTotal,
-            'other_total' => $otherTotal,
+            'sample' => $sampling->isActive() ? (float) $sampling->rate : 1,
+            'similar_total' => (int) round($similarTotal * $scale),
+            'other_total' => (int) round($otherTotal * $scale),
             'cells' => array_map(static fn (array $c): array => [
                 'lat' => (float) $c['lat'],
                 'lon' => (float) $c['lon'],
-                'similar' => (int) $c['similar'],
-                'other' => (int) $c['other'],
+                'similar' => (int) round((int) $c['similar'] * $scale),
+                'other' => (int) round((int) $c['other'] * $scale),
             ], $cells),
             'queries' => $this->clickHouse->queryLog(),
         ]);
@@ -160,12 +175,12 @@ class ApiController extends AbstractController
      *
      * @return array{int, int}
      */
-    private function groupTotals(string $similarBy, string $similarValue, string $whereSql, array $timeParams): array
+    private function groupTotals(string $similarBy, string $similarValue, string $fromTail, array $timeParams): array
     {
         $totals = $this->clickHouse->select(
             "SELECT countIf({$similarBy} = {val:String}) AS similar,
                     countIf({$similarBy} != {val:String}) AS other
-             FROM events {$whereSql}",
+             FROM events {$fromTail}",
             $timeParams + ['val' => $similarValue],
         )[0];
 
@@ -191,14 +206,14 @@ class ApiController extends AbstractController
     }
 
     /** @return array{list<string>, list<int>, list<int>} */
-    private function dimensionCounts(string $field, string $similarBy, string $similarValue, string $whereSql, array $timeParams): array
+    private function dimensionCounts(string $field, string $similarBy, string $similarValue, string $fromTail, array $timeParams): array
     {
         // $field и $similarBy уже проверены по белому списку Schema
         $rows = $this->clickHouse->select(
             "SELECT {$field} AS label,
                     countIf({$similarBy} = {val:String}) AS similar,
                     countIf({$similarBy} != {val:String}) AS other
-             FROM events {$whereSql}
+             FROM events {$fromTail}
              GROUP BY label
              ORDER BY similar + other DESC
              LIMIT 20",
@@ -213,17 +228,17 @@ class ApiController extends AbstractController
     }
 
     /** @return array{list<string>, list<int>, list<int>} */
-    private function metricHistogram(string $field, string $similarBy, string $similarValue, string $whereSql, array $timeParams): array
+    private function metricHistogram(string $field, string $similarBy, string $similarValue, string $fromTail, array $timeParams): array
     {
         $n = self::HISTOGRAM_BUCKETS;
         $rows = $this->clickHouse->select(
-            "WITH (SELECT min({$field}) FROM events {$whereSql}) AS mn,
-                  (SELECT max({$field}) FROM events {$whereSql}) AS mx
+            "WITH (SELECT min({$field}) FROM events {$fromTail}) AS mn,
+                  (SELECT max({$field}) FROM events {$fromTail}) AS mx
              SELECT widthBucket({$field}, mn, mx + 0.001, {$n}) AS bucket,
                     any(mn) AS mn_, any(mx) AS mx_,
                     countIf({$similarBy} = {val:String}) AS similar,
                     countIf({$similarBy} != {val:String}) AS other
-             FROM events {$whereSql}
+             FROM events {$fromTail}
              GROUP BY bucket
              ORDER BY bucket",
             $timeParams + ['val' => $similarValue],

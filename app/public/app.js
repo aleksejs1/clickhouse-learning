@@ -86,7 +86,7 @@ if (timelineCanvas) {
 /* --- Карта: гео-распределение групп (ячейки ~1 км из /api/map) --- */
 
 function initMap(el) {
-    const { similarBy, similarValue, from, to, lat, lon } = el.dataset;
+    const { similarBy, similarValue, from, to, sample, lat, lon } = el.dataset;
     const map = L.map(el, { preferCanvas: true }).setView([Number(lat), Number(lon)], 8);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
@@ -95,6 +95,7 @@ function initMap(el) {
     const params = new URLSearchParams({ similar_by: similarBy, value: similarValue });
     if (from) params.set('from', from);
     if (to) params.set('to', to);
+    if (sample) params.set('sample', sample);
     fetch(`/api/map?${params}`)
         .then((r) => { if (!r.ok) throw new Error(`map: HTTP ${r.status}`); return r.json(); })
         .then((d) => {
@@ -153,13 +154,13 @@ async function drawChart(params, field) {
             labels: d.labels,
             datasets: [
                 {
-                    label: `похожие (N=${d.similar_total})`,
+                    label: `похожие (N${d.sample < 1 ? '≈' : '='}${d.similar_total})`,
                     data: d.similar_pct,
                     backgroundColor: COLOR_SIMILAR,
                     borderRadius: 4,
                 },
                 {
-                    label: `остальные (N=${d.other_total})`,
+                    label: `остальные (N${d.sample < 1 ? '≈' : '='}${d.other_total})`,
                     data: d.other_pct,
                     backgroundColor: COLOR_OTHER,
                     borderRadius: 4,
@@ -188,10 +189,11 @@ async function drawChart(params, field) {
 
 const root = document.getElementById('charts');
 if (root) {
-    const { similarBy, similarValue, from, to, fields } = root.dataset;
+    const { similarBy, similarValue, from, to, sample, fields } = root.dataset;
     const params = new URLSearchParams({ similar_by: similarBy, value: similarValue });
     if (from) params.set('from', from);
     if (to) params.set('to', to);
+    if (sample) params.set('sample', sample);
 
     // Когда все графики загружены — отсортировать по расхождению (самые
     // аномальные поля первыми) и подсветить явных лидеров

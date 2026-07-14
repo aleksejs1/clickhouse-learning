@@ -5,8 +5,14 @@ CREATE DATABASE IF NOT EXISTS telemetry;
 --  - T64 на целочисленных: обрезает неиспользуемые старшие биты (cargo ×2.1 вместо ×1.1);
 --  - Gorilla на Float32 ПРОИГРАЛ обычному LZ4 (значения случайны от строки к строке) — не применяем.
 -- Bloom-индекс ускоряет точечный поиск по event_id: без него это полный скан,
--- т.к. event_id второй в сортировочном ключе и первичный индекс не помогает.
+-- т.к. event_id не входит в сортировочный ключ и первичный индекс не помогает.
 -- TTL: события старше 90 дней ClickHouse удаляет сам при фоновых слияниях.
+-- Сортировочный ключ (toStartOfHour(event_time), xxHash32(event_id)) + SAMPLE BY:
+-- ключ сэмплирования обязан входить в первичный ключ, и он нарочно стоит после
+-- ЧАСА, а не после сырого event_time — внутри часа ~сотни тысяч строк
+-- отсортированы по хэшу, и SAMPLE 0.1 реально пропускает гранулы. С ключом
+-- (event_time, hash) сэмплирование читало бы все гранулы (в одной секунде
+-- слишком мало строк) — проверено замерами, см. docs/DATA_MODEL.md §8.
 CREATE TABLE IF NOT EXISTS telemetry.events
 (
     event_id              UUID,
@@ -45,5 +51,6 @@ CREATE TABLE IF NOT EXISTS telemetry.events
 )
 ENGINE = MergeTree
 PARTITION BY toYYYYMM(event_time)
-ORDER BY (event_time, event_id)
+ORDER BY (toStartOfHour(event_time), xxHash32(event_id))
+SAMPLE BY xxHash32(event_id)
 TTL event_time + INTERVAL 90 DAY;

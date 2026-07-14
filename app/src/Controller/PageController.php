@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Sampling;
 use App\Schema;
 use App\Service\ClickHouse;
 use App\TimeFilter;
@@ -37,9 +38,10 @@ class PageController extends AbstractController
         }
         $whereSql = $where ? 'WHERE '.implode(' AND ', $where) : '';
 
+        // toStartOfHour первым — префикс ключа таблицы, чтение в порядке индекса
         $events = $this->clickHouse->select(
             "SELECT * FROM events {$whereSql}
-             ORDER BY event_time DESC
+             ORDER BY toStartOfHour(event_time) DESC, event_time DESC
              LIMIT {limit:UInt32} OFFSET {offset:UInt32}",
             $params + ['limit' => self::PAGE_SIZE, 'offset' => $page * self::PAGE_SIZE],
         );
@@ -79,7 +81,8 @@ class PageController extends AbstractController
     public function anomalies(Request $request): Response
     {
         $time = TimeFilter::fromRequest($request);
-        $whereSql = $time->conditions() ? 'WHERE '.implode(' AND ', $time->conditions()) : '';
+        $sampling = Sampling::fromRequest($request);
+        $fromTail = trim($sampling->sql().' '.($time->conditions() ? 'WHERE '.implode(' AND ', $time->conditions()) : ''));
         $params = $time->params();
 
         $avgCols = implode(', ', array_map(
@@ -91,21 +94,22 @@ class PageController extends AbstractController
             Schema::METRICS,
         ));
         $global = $this->clickHouse->select(
-            "SELECT count() AS n, {$avgCols}, {$stdCols} FROM events {$whereSql}",
+            "SELECT count() AS n, {$avgCols}, {$stdCols} FROM events {$fromTail}",
             $params,
         )[0];
 
         $sets = implode(', ', array_map(static fn (string $d): string => "({$d})", Schema::DIMENSIONS));
         $groups = $this->clickHouse->select(
             'SELECT '.implode(', ', Schema::DIMENSIONS).", count() AS n, {$avgCols}
-             FROM events {$whereSql}
+             FROM events {$fromTail}
              GROUP BY GROUPING SETS ({$sets})",
             $params,
         );
 
         $findings = [];
         foreach ($groups as $group) {
-            if ((int) $group['n'] < self::ANOMALY_MIN_GROUP) {
+            // средние сэмплирование не искажает, а счётчики домножаем обратно
+            if ((int) round((int) $group['n'] * $sampling->scale()) < self::ANOMALY_MIN_GROUP) {
                 continue;
             }
             // в строке GROUPING SETS сгруппировано ровно одно измерение —
@@ -140,7 +144,7 @@ class PageController extends AbstractController
                     'global_avg' => round($globalAvg, 2),
                     'ratio' => abs($globalAvg) > 1e-9 ? round($groupAvg / $globalAvg, 2) : null,
                     'sigma' => round($sigma, 2),
-                    'n' => (int) $group['n'],
+                    'n' => (int) round((int) $group['n'] * $sampling->scale()),
                 ];
             }
         }
@@ -158,8 +162,9 @@ class PageController extends AbstractController
 
         return $this->render('anomalies.html.twig', [
             'findings' => \array_slice($findings, 0, 60),
-            'total' => (int) $global['n'],
+            'total' => (int) round((int) $global['n'] * $sampling->scale()),
             'time' => $time->queryParams(),
+            'sample' => $sampling->rate,
             'queries' => $this->clickHouse->queryLog(),
         ]);
     }
@@ -180,7 +185,7 @@ class PageController extends AbstractController
         $rows = $this->clickHouse->select(
             'SELECT toString(event_id) AS id FROM events
              WHERE '.implode(' AND ', $where).'
-             ORDER BY event_time DESC LIMIT 1',
+             ORDER BY toStartOfHour(event_time) DESC, event_time DESC LIMIT 1',
             $time->params() + ['value' => $value],
         );
         if (!$rows) {
@@ -261,6 +266,7 @@ class PageController extends AbstractController
             'dimensions' => Schema::DIMENSIONS,
             'chart_fields' => $chartFields,
             'time' => TimeFilter::fromRequest($request)->queryParams(),
+            'sample' => Sampling::fromRequest($request)->rate,
         ]);
     }
 }

@@ -24,6 +24,13 @@
             {% endfor %}
         </select>
     </label>
+    <label>сэмпл
+        <select onchange="const p = new URLSearchParams(location.search); this.value ? p.set('sample', this.value) : p.delete('sample'); location.search = p">
+            <option value="">100%</option>
+            <option value="0.1" {{ sample == '0.1' ? 'selected' }}>10%</option>
+            <option value="0.01" {{ sample == '0.01' ? 'selected' }}>1%</option>
+        </select>
+    </label>
     <span class="muted">
         <span style="color:#b45309">■</span> похожие ({{ similar_by }} = {{ event[similar_by] }})
         &nbsp;<span style="color:#5b8cc4">■</span> все остальные
@@ -43,6 +50,7 @@
          data-similar-value="{{ event[similar_by] }}"
          data-from="{{ time.from|default('') }}"
          data-to="{{ time.to|default('') }}"
+         data-sample="{{ sample }}"
          data-lat="{{ event.lat }}"
          data-lon="{{ event.lon }}"></div>
 </figure>
@@ -52,6 +60,7 @@
      data-similar-value="{{ event[similar_by] }}"
      data-from="{{ time.from|default('') }}"
      data-to="{{ time.to|default('') }}"
+     data-sample="{{ sample }}"
      data-fields="{{ chart_fields|join(',') }}">
     {% for field in chart_fields %}
         <figure>

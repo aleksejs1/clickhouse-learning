@@ -19,6 +19,13 @@
 <form class="toolbar" method="get">
     <label>с <input type="datetime-local" name="from" value="{{ time.from|default('') }}"></label>
     <label>по <input type="datetime-local" name="to" value="{{ time.to|default('') }}"></label>
+    <label>сэмпл
+        <select name="sample">
+            <option value="">100%</option>
+            <option value="0.1" {{ sample == '0.1' ? 'selected' }}>10%</option>
+            <option value="0.01" {{ sample == '0.01' ? 'selected' }}>1%</option>
+        </select>
+    </label>
     <button>Применить</button>
     {% if time.from is defined or time.to is defined %}
         <a href="{{ path('app_page_anomalies') }}">сбросить период</a>
