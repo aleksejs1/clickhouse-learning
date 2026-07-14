@@ -5,6 +5,26 @@
 {% block content %}
 <h1>События <span class="muted">({{ total }})</span></h1>
 
+<div class="stats">
+    <div class="stat">
+        <b>{{ stats.rows|number_format(0, '.', ' ') }}</b>
+        <span>событий в базе</span>
+    </div>
+    <div class="stat">
+        <b>{{ stats.fields }}</b>
+        <span>полей в событии: {{ stats.dimensions }} измерений + {{ stats.metrics }} метрик + id и время</span>
+    </div>
+    <div class="stat">
+        <b>{{ stats.disk_mb|number_format(1, '.', ' ') }} МБ</b>
+        <span>на диске (сжато, {{ stats.uncompressed_mb|number_format(1, '.', ' ') }} МБ без сжатия)</span>
+    </div>
+    <div class="stat">
+        <b>≈ {{ stats.json_export_mb|number_format(1, '.', ' ') }} МБ</b>
+        <span>экспорт в JSON: {{ stats.rows|number_format(0, '.', ' ') }} строк × {{ stats.avg_json_row }} Б
+            {% if stats.disk_mb > 0 %}— в {{ (stats.json_export_mb / stats.disk_mb)|number_format(1) }}× больше, чем на диске{% endif %}</span>
+    </div>
+</div>
+
 <form class="toolbar" method="get">
     <label>Тип события:
         <select name="event_type" onchange="this.form.submit()">

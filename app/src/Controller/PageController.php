@@ -42,7 +42,44 @@ class PageController extends AbstractController
             'page' => $page,
             'pages' => (int) ceil($total / self::PAGE_SIZE),
             'event_type' => $eventType,
+            'stats' => $this->storageStats(),
         ]);
+    }
+
+    /**
+     * Статистика хранения для блока на главной: сколько строк и байт лежит
+     * в активных кусках MergeTree (system.parts) и во что примерно вылился бы
+     * экспорт в JSONEachRow (средний размер JSON-строки по выборке × строки).
+     *
+     * @return array<string, int|float>
+     */
+    private function storageStats(): array
+    {
+        $parts = $this->clickHouse->select(
+            "SELECT sum(rows) AS rows,
+                    sum(bytes_on_disk) AS disk_bytes,
+                    sum(data_uncompressed_bytes) AS uncompressed_bytes
+             FROM system.parts
+             WHERE database = currentDatabase() AND table = 'events' AND active",
+        )[0];
+
+        $avgJsonRow = (int) $this->clickHouse->select(
+            "SELECT ifNull(round(avg(length(formatRow('JSONEachRow', *)))), 0) AS b
+             FROM (SELECT * FROM events LIMIT 1000)",
+        )[0]['b'];
+
+        $rows = (int) $parts['rows'];
+
+        return [
+            'rows' => $rows,
+            'fields' => 2 + \count(Schema::DIMENSIONS) + \count(Schema::METRICS),
+            'dimensions' => \count(Schema::DIMENSIONS),
+            'metrics' => \count(Schema::METRICS),
+            'disk_mb' => (int) $parts['disk_bytes'] / 1024 / 1024,
+            'uncompressed_mb' => (int) $parts['uncompressed_bytes'] / 1024 / 1024,
+            'avg_json_row' => $avgJsonRow,
+            'json_export_mb' => $rows * $avgJsonRow / 1024 / 1024,
+        ];
     }
 
     #[Route('/event/{id}', methods: ['GET'])]

@@ -111,6 +111,17 @@ ORDER BY bucket
 
 ### `GET /` — таблица событий
 
+- **Блок статистики** над таблицей, 4 плитки:
+  1. событий в базе;
+  2. полей в событии (из `Schema`: измерения + метрики + id и время);
+  3. размер на диске + без сжатия — из `system.parts`:
+     `SELECT sum(rows), sum(bytes_on_disk), sum(data_uncompressed_bytes)
+     FROM system.parts WHERE database = currentDatabase() AND table = 'events' AND active`;
+  4. оценка экспорта в JSON по формуле «строк × средний размер JSON-строки»,
+     где средний размер — по выборке:
+     `SELECT round(avg(length(formatRow('JSONEachRow', *)))) FROM (SELECT * FROM events LIMIT 1000)`;
+     рядом — во сколько раз это больше размера на диске (наглядно показывает
+     колоночное сжатие ClickHouse).
 - Таблица: `event_time`, `event_type`, `vehicle_id`, `driver_id`, `route_id`,
   `region`, `speed_kmh`, `fuel_consumption_l100`.
 - Сверху `<select>` фильтра по `event_type` (значения захардкожены в шаблоне
