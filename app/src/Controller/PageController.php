@@ -109,8 +109,10 @@ class PageController extends AbstractController
         if (!Uuid::isValid($id)) {
             throw $this->createNotFoundException();
         }
+        // greatCircleDistance — гео-функция ClickHouse (метры по дуге большого круга)
         $rows = $this->clickHouse->select(
-            'SELECT * FROM events WHERE event_id = {id:UUID} LIMIT 1',
+            'SELECT *, round(greatCircleDistance(lon, lat, 24.10, 56.95) / 1000, 1) AS distance_to_riga_km
+             FROM events WHERE event_id = {id:UUID} LIMIT 1',
             ['id' => $id],
         );
         if (!$rows) {

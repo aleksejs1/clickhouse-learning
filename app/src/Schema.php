@@ -35,6 +35,12 @@ final class Schema
         'harsh_events_cnt',
     ];
 
+    /**
+     * Гео-поля нарочно не входят в METRICS: одномерные гистограммы широты и
+     * долготы малополезны — их место на карте (эндпоинт /api/map).
+     */
+    public const GEO = ['lat', 'lon'];
+
     public static function isDimension(string $field): bool
     {
         return \in_array($field, self::DIMENSIONS, true);

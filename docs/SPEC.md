@@ -166,6 +166,7 @@ symfony/yaml               symfony/uid
 | Список событий (JSON) | `GET /api/events` |
 | Одно событие (JSON) | `GET /api/events/{id}` |
 | Данные одного графика (JSON) | `GET /api/chart/{field}?similar_by={dim}&value={val}` |
+| Гео-распределение для карты (JSON) | `GET /api/map?similar_by={dim}&value={val}` |
 
 ## 7. Команда генерации данных
 

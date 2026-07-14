@@ -32,6 +32,16 @@ class GenerateEventsCommand extends Command
     private const WEATHER = ['clear' => 55, 'rain' => 25, 'snow' => 12, 'fog' => 8];
     private const HARSH_CNT = [0 => 70, 1 => 20, 2 => 7, 3 => 1.5, 4 => 1, 5 => 0.5];
 
+    // Гео: маршруты — лучи из главного города региона в Ригу (docs/DATA_MODEL.md §7)
+    private const REGION_CITY = [
+        'riga' => [56.41, 24.19],     // Бауска (маршруты рижского региона)
+        'kurzeme' => [56.51, 21.01],  // Лиепая
+        'latgale' => [55.87, 26.52],  // Даугавпилс
+        'vidzeme' => [57.54, 25.43],  // Валмиера
+        'zemgale' => [56.65, 23.71],  // Елгава
+    ];
+    private const RIGA = [56.95, 24.10];
+
     public function __construct(private ClickHouse $clickHouse)
     {
         parent::__construct();
@@ -113,6 +123,12 @@ class GenerateEventsCommand extends Command
         $tripDuration = 'trip_end' === $eventType ? (int) min(600, max(10, $this->normal(180, 60))) : 0;
         $harshCnt = $this->weighted(self::HARSH_CNT);
 
+        // Точка на линии «город региона → Рига» + поперечный шум
+        [$startLat, $startLon] = self::REGION_CITY[$region];
+        $t = mt_rand(0, 1000) / 1000;
+        $lat = $startLat + $t * (self::RIGA[0] - $startLat) + (mt_rand(0, 1000) / 1000 - 0.5) * 0.06;
+        $lon = $startLon + $t * (self::RIGA[1] - $startLon) + (mt_rand(0, 1000) / 1000 - 0.5) * 0.10;
+
         // Аномалии (docs/DATA_MODEL.md §3)
         if ('FS-07' === $station) {                                // A1: плохое топливо
             $consumption *= 1.2;
@@ -142,6 +158,8 @@ class GenerateEventsCommand extends Command
             'road_type' => $roadType,
             'weather' => $weather,
             'last_fuel_station_id' => $station,
+            'lat' => round($lat, 5),
+            'lon' => round($lon, 5),
             'speed_kmh' => round($speed, 1),
             'fuel_level_pct' => $fuelLevel,
             'fuel_consumption_l100' => round($consumption, 1),

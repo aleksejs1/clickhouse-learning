@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <title>{% block title %}Fleet Telemetry Explorer{% endblock %}</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    {% block head %}{% endblock %}
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font: 14px/1.45 system-ui, sans-serif; color: #1e293b; background: #f8fafc; }
@@ -22,6 +23,9 @@
         .timeline figcaption { font-weight: 600; margin-bottom: 6px; }
         .timeline div { height: 130px; }
         .timeline canvas { cursor: crosshair; }
+        .map-panel { margin: 12px 0; background: #fff; border: 1px solid #e2e8f0; padding: 10px; }
+        .map-panel figcaption { font-weight: 600; margin-bottom: 6px; }
+        .map-panel div { height: 380px; }
         .stat { background: #fff; border: 1px solid #e2e8f0; padding: 10px 16px; min-width: 180px; flex: 1; }
         .stat b { display: block; font-size: 22px; }
         .stat span { color: #64748b; font-size: 12px; }

@@ -88,16 +88,7 @@ class ApiController extends AbstractController
             ? $this->dimensionCounts($field, $similarBy, $similarValue, $whereSql, $timeParams)
             : $this->metricHistogram($field, $similarBy, $similarValue, $whereSql, $timeParams);
 
-        // Итоги по всей выборке, а не по попавшим на график корзинам: у
-        // dimension-графиков LIMIT 20, и проценты должны быть долей от группы
-        $totals = $this->clickHouse->select(
-            "SELECT countIf({$similarBy} = {val:String}) AS similar,
-                    countIf({$similarBy} != {val:String}) AS other
-             FROM events {$whereSql}",
-            $timeParams + ['val' => $similarValue],
-        )[0];
-        $similarTotal = (int) $totals['similar'];
-        $otherTotal = (int) $totals['other'];
+        [$similarTotal, $otherTotal] = $this->groupTotals($similarBy, $similarValue, $whereSql, $timeParams);
         $similarPct = $this->toPercent($similar, $similarTotal);
         $otherPct = $this->toPercent($other, $otherTotal);
 
@@ -114,6 +105,71 @@ class ApiController extends AbstractController
             'divergence' => $this->divergence($similarPct, $otherPct, $similarTotal, $otherTotal),
             'queries' => $this->clickHouse->queryLog(),
         ]);
+    }
+
+    /**
+     * Гео-распределение групп для карты: события агрегируются в ячейки
+     * сетки ~1×1 км (округление координат до 2 знаков). См. docs/API.md §4.
+     */
+    #[Route('/map', methods: ['GET'])]
+    public function map(Request $request): JsonResponse
+    {
+        $similarBy = (string) $request->query->get('similar_by', '');
+        if (!Schema::isDimension($similarBy)) {
+            return $this->json(['error' => 'similar_by must be one of: '.implode(', ', Schema::DIMENSIONS)], 400);
+        }
+        $similarValue = $request->query->get('value');
+        if (null === $similarValue) {
+            return $this->json(['error' => 'value query parameter is required'], 400);
+        }
+
+        $time = TimeFilter::fromRequest($request);
+        $whereSql = $time->conditions() ? 'WHERE '.implode(' AND ', $time->conditions()) : '';
+        $timeParams = $time->params();
+
+        $cells = $this->clickHouse->select(
+            "SELECT round(lat, 2) AS lat, round(lon, 2) AS lon,
+                    countIf({$similarBy} = {val:String}) AS similar,
+                    countIf({$similarBy} != {val:String}) AS other
+             FROM events {$whereSql}
+             GROUP BY lat, lon
+             ORDER BY similar + other DESC
+             LIMIT 4000",
+            $timeParams + ['val' => $similarValue],
+        );
+        [$similarTotal, $otherTotal] = $this->groupTotals($similarBy, $similarValue, $whereSql, $timeParams);
+
+        return $this->json([
+            'similar_by' => $similarBy,
+            'similar_value' => $similarValue,
+            'similar_total' => $similarTotal,
+            'other_total' => $otherTotal,
+            'cells' => array_map(static fn (array $c): array => [
+                'lat' => (float) $c['lat'],
+                'lon' => (float) $c['lon'],
+                'similar' => (int) $c['similar'],
+                'other' => (int) $c['other'],
+            ], $cells),
+            'queries' => $this->clickHouse->queryLog(),
+        ]);
+    }
+
+    /**
+     * Размеры групп по всей выборке, а не по попавшим на график корзинам:
+     * у dimension-графиков LIMIT 20, и проценты должны быть долей от группы.
+     *
+     * @return array{int, int}
+     */
+    private function groupTotals(string $similarBy, string $similarValue, string $whereSql, array $timeParams): array
+    {
+        $totals = $this->clickHouse->select(
+            "SELECT countIf({$similarBy} = {val:String}) AS similar,
+                    countIf({$similarBy} != {val:String}) AS other
+             FROM events {$whereSql}",
+            $timeParams + ['val' => $similarValue],
+        )[0];
+
+        return [(int) $totals['similar'], (int) $totals['other']];
     }
 
     /** @return array<string, mixed> */

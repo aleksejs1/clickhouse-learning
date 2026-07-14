@@ -2,6 +2,11 @@
 
 {% block title %}{{ event.event_type }} · {{ event.event_time }}{% endblock %}
 
+{% block head %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
 {% block content %}
 <h1>{{ event.event_type }} <span class="muted">· {{ event.event_time }} · {{ event.vehicle_id }}</span></h1>
 
@@ -28,6 +33,19 @@
         {% endif %}
     </span>
 </div>
+
+<figure class="map-panel">
+    <figcaption>География групп
+        <span class="muted" style="font-weight: 400">· ячейки ~1 км: янтарные — где «похожие» перепредставлены, синие — обычные; маркер — это событие</span>
+    </figcaption>
+    <div id="map"
+         data-similar-by="{{ similar_by }}"
+         data-similar-value="{{ event[similar_by] }}"
+         data-from="{{ time.from|default('') }}"
+         data-to="{{ time.to|default('') }}"
+         data-lat="{{ event.lat }}"
+         data-lon="{{ event.lon }}"></div>
+</figure>
 
 <div class="charts" id="charts"
      data-similar-by="{{ similar_by }}"

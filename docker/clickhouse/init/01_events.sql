@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS telemetry.events
     weather               LowCardinality(String),
     last_fuel_station_id  LowCardinality(String),
 
+    -- гео (не входят в METRICS — см. docs/DATA_MODEL.md §7)
+    lat                   Float32,
+    lon                   Float32,
+
     -- метрики (metrics)
     speed_kmh             Float32,
     fuel_level_pct        Float32,

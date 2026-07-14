@@ -1,5 +1,5 @@
-/* Таймлайн на главной и сетка сравнительных графиков на странице события
-   (см. docs/API.md §4). */
+/* Таймлайн на главной, карта и сетка сравнительных графиков на странице
+   события (см. docs/API.md §5). */
 
 const COLOR_SIMILAR = '#f59e0b';
 const COLOR_OTHER = '#5b8cc4';
@@ -81,6 +81,42 @@ function initTimeline(canvas) {
 const timelineCanvas = document.getElementById('timeline');
 if (timelineCanvas) {
     initTimeline(timelineCanvas);
+}
+
+/* --- Карта: гео-распределение групп (ячейки ~1 км из /api/map) --- */
+
+function initMap(el) {
+    const { similarBy, similarValue, from, to, lat, lon } = el.dataset;
+    const map = L.map(el, { preferCanvas: true }).setView([Number(lat), Number(lon)], 8);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
+
+    const params = new URLSearchParams({ similar_by: similarBy, value: similarValue });
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    fetch(`/api/map?${params}`)
+        .then((r) => { if (!r.ok) throw new Error(`map: HTTP ${r.status}`); return r.json(); })
+        .then((d) => {
+            for (const c of d.cells) {
+                // Ячейка «аномальная», если доля похожих в ней выше их доли в целом
+                const overRepresented = c.similar / Math.max(1, d.similar_total)
+                    > c.other / Math.max(1, d.other_total);
+                L.circleMarker([c.lat, c.lon], {
+                    radius: 2 + Math.log10(c.similar + c.other + 1) * 1.8,
+                    stroke: false,
+                    fillColor: overRepresented ? COLOR_SIMILAR : COLOR_OTHER,
+                    fillOpacity: 0.45,
+                }).addTo(map);
+            }
+            L.marker([Number(lat), Number(lon)]).addTo(map).bindPopup('Это событие');
+        })
+        .catch(console.error);
+}
+
+const mapEl = document.getElementById('map');
+if (mapEl) {
+    initMap(mapEl);
 }
 
 /* --- Сетка сравнительных графиков --- */
