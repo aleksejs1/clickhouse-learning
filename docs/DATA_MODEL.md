@@ -128,3 +128,22 @@ SELECT event_type, count() FROM telemetry.events GROUP BY event_type;
 SELECT last_fuel_station_id, round(avg(fuel_consumption_l100), 1) AS avg_l100
 FROM telemetry.events GROUP BY last_fuel_station_id ORDER BY avg_l100 DESC;
 ```
+
+## 5. Почасовые агрегаты `events_by_hour`
+
+Для таймлайна на главной: материализованное представление — по сути триггер на
+INSERT — на лету агрегирует каждую вставляемую пачку в таблицу
+`events_by_hour(hour, event_type, events)` на движке `SummingMergeTree`
+(DDL — `docker/clickhouse/init/02_events_by_hour.sql`).
+
+Что важно понимать (учебные моменты):
+
+- **MV видит только новые вставки.** При создании поверх уже наполненной
+  таблицы нужен разовый backfill — `INSERT INTO events_by_hour SELECT ...`
+  (готовый запрос в комментарии DDL-файла).
+- **`SummingMergeTree` складывает строки с одинаковым ключом при фоновых
+  слияниях**, то есть «когда-нибудь потом». Поэтому при чтении всё равно
+  нужен `GROUP BY hour` + `sum(events)` — иначе можно получить недосуммированные
+  дубли.
+- Выигрыш: таймлайн читает ~тысячи строк вместо десятков миллионов —
+  `SELECT hour, sum(events) FROM events_by_hour GROUP BY hour ORDER BY hour`.

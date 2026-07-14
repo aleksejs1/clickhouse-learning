@@ -43,6 +43,16 @@ class PageController extends AbstractController
         );
         $total = (int) $this->clickHouse->select("SELECT count() AS c FROM events {$whereSql}", $params)[0]['c'];
 
+        // Таймлайн читает почасовые агрегаты (MV events_by_hour, ~тысячи строк),
+        // а не сырые события; sum() обязателен — SummingMergeTree сливает фоном
+        $timeline = $this->clickHouse->select(
+            'SELECT toString(hour) AS hour, sum(events) AS c
+             FROM events_by_hour '.('' !== $eventType ? 'WHERE event_type = {event_type:String}' : '').'
+             GROUP BY hour
+             ORDER BY hour',
+            '' !== $eventType ? ['event_type' => $eventType] : [],
+        );
+
         return $this->render('events.html.twig', [
             'events' => $events,
             'total' => $total,
@@ -50,6 +60,7 @@ class PageController extends AbstractController
             'pages' => (int) ceil($total / self::PAGE_SIZE),
             'event_type' => $eventType,
             'time' => $time->queryParams(),
+            'timeline' => $timeline,
             'stats' => $this->storageStats(),
         ]);
     }

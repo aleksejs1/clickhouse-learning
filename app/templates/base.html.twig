@@ -18,6 +18,10 @@
         select { padding: 4px 8px; }
         .toolbar { display: flex; gap: 16px; align-items: center; margin: 12px 0; }
         .stats { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+        .timeline { margin: 12px 0; background: #fff; border: 1px solid #e2e8f0; padding: 10px; }
+        .timeline figcaption { font-weight: 600; margin-bottom: 6px; }
+        .timeline div { height: 130px; }
+        .timeline canvas { cursor: crosshair; }
         .stat { background: #fff; border: 1px solid #e2e8f0; padding: 10px 16px; min-width: 180px; flex: 1; }
         .stat b { display: block; font-size: 22px; }
         .stat span { color: #64748b; font-size: 12px; }
@@ -30,6 +34,8 @@
         .charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; margin-top: 16px; }
         .charts figure { margin: 0; background: #fff; border: 1px solid #e2e8f0; padding: 10px; }
         .charts figcaption { font-weight: 600; margin-bottom: 6px; }
+        .charts figure.anomaly { border: 2px solid #f59e0b; }
+        .charts figure.anomaly figcaption::after { content: ' ← аномалия?'; color: #b45309; font-weight: 400; }
     </style>
 </head>
 <body>

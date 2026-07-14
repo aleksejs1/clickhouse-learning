@@ -34,6 +34,7 @@ docker compose exec clickhouse clickhouse-client -u app --password app -d teleme
 | [docs/PLAN.md](docs/PLAN.md) | План имплементации: 8 фаз с шагами-чекбоксами и проверками |
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Схема таблицы ClickHouse, словарь полей, генератор данных и заложенные аномалии |
 | [docs/API.md](docs/API.md) | HTTP API, страницы веб-интерфейса, готовые SQL-рецепты для графиков |
+| [docs/BACKLOG.md](docs/BACKLOG.md) | Бэклог идей: что ещё попробовать (гео, прожекции, TTL, кодеки…) |
 | [CLAUDE.md](CLAUDE.md) | Шпаргалка по командам и ключевым решениям |
 
 ## Что здесь можно «пощупать» в ClickHouse

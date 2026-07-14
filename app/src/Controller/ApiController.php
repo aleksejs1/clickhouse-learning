@@ -98,6 +98,8 @@ class ApiController extends AbstractController
         )[0];
         $similarTotal = (int) $totals['similar'];
         $otherTotal = (int) $totals['other'];
+        $similarPct = $this->toPercent($similar, $similarTotal);
+        $otherPct = $this->toPercent($other, $otherTotal);
 
         return $this->json([
             'field' => $field,
@@ -107,8 +109,9 @@ class ApiController extends AbstractController
             'similar_total' => $similarTotal,
             'other_total' => $otherTotal,
             'labels' => $labels,
-            'similar_pct' => $this->toPercent($similar, $similarTotal),
-            'other_pct' => $this->toPercent($other, $otherTotal),
+            'similar_pct' => $similarPct,
+            'other_pct' => $otherPct,
+            'divergence' => $this->divergence($similarPct, $otherPct, $similarTotal, $otherTotal),
         ]);
     }
 
@@ -188,6 +191,28 @@ class ApiController extends AbstractController
         }
 
         return [$labels, array_values($similar), array_values($other)];
+    }
+
+    /**
+     * Насколько распределение «похожих» отличается от «остальных»: расстояние
+     * полной вариации, 0 (совпадают) … 100 (не пересекаются). По нему страница
+     * события сортирует графики — самые аномальные поля первыми.
+     *
+     * @param list<float> $similarPct
+     * @param list<float> $otherPct
+     */
+    private function divergence(array $similarPct, array $otherPct, int $similarTotal, int $otherTotal): float
+    {
+        if (0 === $similarTotal || 0 === $otherTotal) {
+            return 0.0;
+        }
+
+        $sum = 0.0;
+        foreach ($similarPct as $i => $pct) {
+            $sum += abs($pct - $otherPct[$i]);
+        }
+
+        return round($sum / 2, 1);
     }
 
     /** @return list<float> */
