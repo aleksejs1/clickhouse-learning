@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Fleet Telemetry Explorer{% endblock %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font: 14px/1.45 system-ui, sans-serif; color: #1e293b; background: #f8fafc; }
+        header { background: #0f172a; padding: 10px 24px; }
+        header a { color: #f8fafc; text-decoration: none; font-weight: 600; }
+        main { padding: 16px 24px; max-width: 1500px; margin: 0 auto; }
+        h1 { font-size: 20px; }
+        table { border-collapse: collapse; width: 100%; background: #fff; }
+        th, td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; white-space: nowrap; }
+        th { background: #f1f5f9; position: sticky; top: 0; }
+        tbody tr:hover { background: #fef3c7; cursor: pointer; }
+        select { padding: 4px 8px; }
+        .toolbar { display: flex; gap: 16px; align-items: center; margin: 12px 0; }
+        .toolbar a { color: #0369a1; }
+        .muted { color: #64748b; }
+        dl.event-card { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px 16px; background: #fff; border: 1px solid #e2e8f0; padding: 12px 16px; }
+        dl.event-card div { display: flex; gap: 8px; padding: 2px 0; }
+        dl.event-card dt { color: #64748b; min-width: 150px; margin: 0; }
+        dl.event-card dd { margin: 0; font-weight: 600; }
+        .charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; margin-top: 16px; }
+        .charts figure { margin: 0; background: #fff; border: 1px solid #e2e8f0; padding: 10px; }
+        .charts figcaption { font-weight: 600; margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+<header><a href="/">Fleet Telemetry Explorer</a></header>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,16 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Kernel.php'
+
+    App\Service\ClickHouse:
+        arguments:
+            $url: '%env(CLICKHOUSE_URL)%'
+            $user: '%env(CLICKHOUSE_USER)%'
+            $password: '%env(CLICKHOUSE_PASSWORD)%'
+            $database: '%env(CLICKHOUSE_DB)%'

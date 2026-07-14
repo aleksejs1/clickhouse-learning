@@ -97,7 +97,7 @@ services:
 
   nginx:
     image: nginx:1.27-alpine
-    ports: ["8080:80"]
+    ports: ["8081:80"]
     volumes:
       - ./app:/app:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro

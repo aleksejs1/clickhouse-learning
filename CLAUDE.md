@@ -19,7 +19,7 @@ docker compose exec clickhouse clickhouse-client -u app --password app -d teleme
 curl 'http://localhost:8123/ping'                             # ClickHouse жив?
 ```
 
-UI: http://localhost:8080. Всё выполняется только внутри контейнеров — на хосте
+UI: http://localhost:8081. Всё выполняется только внутри контейнеров — на хосте
 нет ни PHP, ни composer.
 
 ## Ключевые решения (не менять без запроса пользователя)

@@ -18,7 +18,7 @@ docker compose exec php composer install
 docker compose exec php bin/console app:generate-events 100000
 ```
 
-Открыть http://localhost:8080 — таблица событий. Клик по строке → страница события с графиками.
+Открыть http://localhost:8081 — таблица событий. Клик по строке → страница события с графиками.
 
 Консоль ClickHouse для экспериментов:
 
