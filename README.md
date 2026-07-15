@@ -47,4 +47,6 @@ docker compose exec clickhouse clickhouse-client -u app --password app -d teleme
 - широкая денормализованная таблица событий на движке `MergeTree`;
 - `LowCardinality(String)` для измерений;
 - агрегации `countIf`, `widthBucket`, `quantile` на миллионах строк за миллисекунды;
-- форматы `JSON` / `JSONEachRow` для чтения и пакетной вставки.
+- форматы `JSON` / `JSONEachRow` для чтения и пакетной вставки;
+- `ReplacingMergeTree` + `FINAL` для изменяемых данных (конфиги репортов и
+  алертов): обновление — INSERT новой версии, удаление — soft delete.
