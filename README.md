@@ -19,6 +19,15 @@ docker compose exec php bin/console app:generate-events 100000
 ```
 
 Открыть http://localhost:8081 — таблица событий. Клик по строке → страница события с графиками.
+В шапке: **Аномалии** (автопоиск), **Репорты** (конструктор бордов),
+**Алерты** (конструктор графов в стиле n8n, только конфигурация).
+
+Загрузить эталонные конфиги (опционально):
+
+```bash
+for f in docs/examples/reports/*.json; do curl -s -X POST localhost:8081/api/reports -d @$f; done
+for f in docs/examples/alerts/*.json;  do curl -s -X POST localhost:8081/api/alerts  -d @$f; done
+```
 
 Консоль ClickHouse для экспериментов:
 
