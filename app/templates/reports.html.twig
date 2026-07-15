@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Репорты · Fleet Telemetry Explorer{% endblock %}
+
+{% block content %}
+<h1>Репорты</h1>
+
+<div class="toolbar">
+    <a href="{{ path('app_reportpage_new') }}">+ создать</a>
+    <a href="{{ path('app_reportpage_new') }}?ai=1">+ создать с ИИ</a>
+</div>
+
+<table>
+    <thead>
+    <tr><th>название</th><th>описание</th><th>обновлён</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for r in reports %}
+        <tr>
+            <td><a href="{{ path('app_reportpage_view', {id: r.id}) }}"><b>{{ r.name }}</b></a></td>
+            <td class="muted">{{ r.description }}</td>
+            <td class="muted">{{ r.updated_at }}</td>
+            <td>
+                <a href="{{ path('app_reportpage_edit', {id: r.id}) }}">редактировать</a>
+                &nbsp;<a href="#" onclick="if (confirm('Удалить репорт?')) fetch('/api/reports/{{ r.id }}', {method: 'DELETE'}).then(() => location.reload()); return false">удалить</a>
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="4" class="muted">Репортов пока нет — создайте первый</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

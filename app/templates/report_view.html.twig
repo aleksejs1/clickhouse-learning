@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ name }} · Репорты{% endblock %}
+
+{% block content %}
+<h1>{{ name }}
+    <span class="muted" style="font-size: 14px">
+        · <a href="{{ path('app_reportpage_edit', {id: id}) }}">редактировать</a>
+        · <a href="{{ path('app_reportpage_list') }}">все репорты</a>
+    </span>
+</h1>
+{% if description %}<p class="muted">{{ description }}</p>{% endif %}
+
+<div id="report-view" class="rgrid" data-config="{{ config_json }}"></div>
+
+<script src="/reports.js"></script>
+{% endblock %}
