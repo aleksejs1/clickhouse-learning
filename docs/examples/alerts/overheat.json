@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "name": "Перегрев двигателя",
+  "description": "Письмо механику при среднем перегреве, не чаще раза в час",
+  "enabled": true,
+  "nodes": [
+    {"id": "n1", "type": "metric_threshold", "position": {"x": 60, "y": 120},
+     "params": {"metric": "engine_temp_c", "agg": "avg", "op": ">", "value": 105, "window_minutes": 15, "group_by": "vehicle_id"}},
+    {"id": "n2", "type": "dedup", "position": {"x": 380, "y": 120},
+     "params": {"cooldown_minutes": 60}},
+    {"id": "n3", "type": "notify_email", "position": {"x": 700, "y": 120},
+     "params": {"to": "mechanic@example.com", "subject": "Перегрев {{vehicle_id}}", "body": "Средняя температура {{value}}°C за 15 минут"}}
+  ],
+  "edges": [
+    {"from": "n1", "to": "n2"},
+    {"from": "n2", "to": "n3"}
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Выход из зоны ночью",
+  "description": "Ночной выезд: гружёная машина → SMS охране, порожняя → email диспетчеру",
+  "enabled": true,
+  "nodes": [
+    {"id": "t1", "type": "geofence", "position": {"x": 60, "y": 160},
+     "params": {"lat": 56.95, "lon": 24.10, "radius_km": 5, "direction": "exit", "group_by": "vehicle_id"}},
+    {"id": "w1", "type": "time_window", "position": {"x": 360, "y": 160},
+     "params": {"days_of_week": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"], "from_time": "22:00", "to_time": "06:00"}},
+    {"id": "c1", "type": "condition", "position": {"x": 640, "y": 160},
+     "params": {"field": "cargo_weight_kg", "op": ">", "value": 0}},
+    {"id": "a1", "type": "notify_sms", "position": {"x": 940, "y": 80},
+     "params": {"phone": "+37120000000", "text": "Гружёная {{vehicle_id}} покинула зону ночью"}},
+    {"id": "a2", "type": "notify_email", "position": {"x": 940, "y": 260},
+     "params": {"to": "dispatch@example.com", "subject": "Ночной выезд {{vehicle_id}}", "body": "Порожняя машина покинула зону"}}
+  ],
+  "edges": [
+    {"from": "t1", "to": "w1"},
+    {"from": "w1", "to": "c1"},
+    {"from": "c1", "from_port": "true", "to": "a1"},
+    {"from": "c1", "from_port": "false", "to": "a2"}
+  ]
+}

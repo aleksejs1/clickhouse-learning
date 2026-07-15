@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "name": "Молчащий датчик с эскалацией",
+  "description": "Машина не выходит на связь 30 мин → механику, через час — руководителю",
+  "enabled": true,
+  "nodes": [
+    {"id": "t1", "type": "no_data", "position": {"x": 60, "y": 140},
+     "params": {"group_by": "vehicle_id", "silence_minutes": 30}},
+    {"id": "d1", "type": "dedup", "position": {"x": 360, "y": 140},
+     "params": {"cooldown_minutes": 120}},
+    {"id": "a1", "type": "notify_email", "position": {"x": 640, "y": 140},
+     "params": {"to": "mechanic@example.com", "subject": "Молчит {{vehicle_id}}", "body": "Нет данных более 30 минут"}},
+    {"id": "a2", "type": "escalate", "position": {"x": 640, "y": 300},
+     "params": {"after_minutes": 60, "to": "head@example.com"}}
+  ],
+  "edges": [
+    {"from": "t1", "to": "d1"},
+    {"from": "d1", "to": "a1"},
+    {"from": "d1", "to": "a2"}
+  ]
+}
