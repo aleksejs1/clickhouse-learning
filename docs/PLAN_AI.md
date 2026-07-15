@@ -61,16 +61,16 @@ docker compose exec php bin/console app:ai-prompt alert | grep -c 'metric_thresh
 
 ## Фаза I2 — AiConfigurator и эндпоинты
 
-- [ ] I2.1 JSON-схемы ответа `{reply, config}` для structured outputs: report
+- [x] I2.1 JSON-схемы ответа `{reply, config}` для structured outputs: report
       (виджеты с enum'ами fn/op/viz) и alert (nodes/edges с enum типов узлов);
       настолько строгие, насколько позволяет structured outputs
-- [ ] I2.2 `app/src/Ai/AiConfigurator.php`: вызов
+- [x] I2.2 `app/src/Ai/AiConfigurator.php`: вызов
       `messages->create(model: claude-opus-4-8, maxTokens: 16000,
       thinking: adaptive, system: [+cacheControl ephemeral], messages,
       outputConfig: json_schema)`; таймаут клиента ≥120с
-- [ ] I2.3 Петля валидации: серверный валидатор → при ошибках один повторный
+- [x] I2.3 Петля валидации: серверный валидатор → при ошибках один повторный
       вызов с текстом ошибок → 422 если снова невалиден
-- [ ] I2.4 Эндпоинты `POST /api/ai/report` и `/api/ai/alert` по AI_ASSISTANT.md §4
+- [x] I2.4 Эндпоинты `POST /api/ai/report` и `/api/ai/alert` по AI_ASSISTANT.md §4
       (history, current_config; alert дополнительно возвращает summary);
       ошибки Anthropic API → 502
 
@@ -89,23 +89,23 @@ curl -s -X POST http://localhost:8081/api/ai/alert -H 'Content-Type: application
 # второй запрос с тем же system должен показать cache_read_input_tokens > 0 (залогировать usage)
 ```
 
-- [ ] I2.5 Логировать `usage` (input/output/cache_read) каждого вызова в
+- [x] I2.5 Логировать `usage` (input/output/cache_read) каждого вызова в
       error_log — и для отладки, и как учебная витрина промпт-кэша
 
 ---
 
 ## Фаза I3 — чат-панель UI
 
-- [ ] I3.1 Общий JS-компонент чата (лента, ввод, спиннер, ошибки) в app.js;
+- [x] I3.1 Общий JS-компонент чата (лента, ввод, спиннер, ошибки) в app.js;
       Twig-инклюд `_ai_chat.html.twig`, рендерится только при `ai_enabled`
-- [ ] I3.2 Встроить в `/report/{id}/edit`: ответный config применяется к
+- [x] I3.2 Встроить в `/report/{id}/edit`: ответный config применяется к
       редактору (форма+предпросмотр перечитывают конфиг), history и
       current_config уходят с каждым запросом
-- [ ] I3.3 Встроить в `/alert/{id}/edit`: config раскладывается на канвас
+- [x] I3.3 Встроить в `/alert/{id}/edit`: config раскладывается на канвас
       (`toDrawflow`), summary из ответа показывается под канвасом
-- [ ] I3.4 Кнопки «Создать с ИИ» на `/reports` и `/alerts` → редактор нового
+- [x] I3.4 Кнопки «Создать с ИИ» на `/reports` и `/alerts` → редактор нового
       объекта с фокусом в поле чата
-- [ ] I3.5 Применённый конфиг не сохраняется сам — только по «Сохранить»
+- [x] I3.5 Применённый конфиг не сохраняется сам — только по «Сохранить»
 
 **Проверка (в браузере):** сценарий «создать с ИИ» для репорта и для алерта;
 диалог из двух шагов (создать → уточнить); закрыть без сохранения → объект не
@@ -117,8 +117,8 @@ curl -s -X POST http://localhost:8081/api/ai/alert -H 'Content-Type: application
 
 Критерии AI_ASSISTANT.md §8, все шесть, особо:
 
-- [ ] I4.1 Мультивиджетный запрос («дашборд для механика…») → ≥3 валидных виджета
-- [ ] I4.2 Негатив: сломать JSON-схему ответа (временно) → ретрай → 422 в чате,
+- [x] I4.1 Мультивиджетный запрос («дашборд для механика…») → ≥3 валидных виджета
+- [x] I4.2 Негатив: сломать JSON-схему ответа (временно) → ретрай → 422 в чате,
       редактор жив
 - [x] I4.3 Без ключа: панели скрыты, 503, всё остальное работает
 - [x] I4.4 Зафиксировать в README: фича опциональна и платна; примерная

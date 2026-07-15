@@ -51,6 +51,11 @@
             addMessage('assistant', data.reply || '(готово)');
             history.push({ role: 'assistant', content: data.reply || '' });
             apply(data.config);
+            // summary из ответа алерта — под канвасом (docs/PLAN_AI I3.3)
+            if (kind === 'alert' && data.summary) {
+                const box = document.getElementById('ae-summary');
+                if (box) box.textContent = data.summary;
+            }
         } catch (e) {
             addMessage('error', 'Сеть: ' + e.message);
         } finally {

@@ -42,6 +42,7 @@ class AiConfigurator
             $this->prompts->report(),
             $this->reportResponseSchema(),
             fn (array $config): array => $this->reportValidator->validate($config),
+            null,
             $prompt, $history, $currentConfig,
         );
     }
@@ -60,6 +61,20 @@ class AiConfigurator
                 static fn (array $e): string => ($e['node'] ? $e['node'].': ' : '').$e['message'],
                 $this->alertValidator->validate($config),
             ),
+            // params узлов приходят JSON-строкой (см. alertResponseSchema) — раскодируем в объект.
+            // Итерируем $config['nodes'] напрямую: `?? []` создал бы копию, и ссылка не сработала бы.
+            static function (array $config): array {
+                if (\is_array($config['nodes'] ?? null)) {
+                    foreach ($config['nodes'] as &$node) {
+                        if (\is_string($node['params'] ?? null)) {
+                            $node['params'] = json_decode($node['params'], true) ?? [];
+                        }
+                    }
+                    unset($node);
+                }
+
+                return $config;
+            },
             $prompt, $history, $currentConfig,
         );
         $result['summary'] = $this->alertSummary->build($result['config']);
@@ -69,12 +84,14 @@ class AiConfigurator
 
     /**
      * @param callable(array): list<string> $validate
+     * @param (callable(array): array)|null  $normalize приводит config к финальной форме до валидации
      *
      * @return array{reply: string, config: array}
      */
-    private function generate(string $system, array $schema, callable $validate, string $prompt, array $history, ?array $currentConfig): array
+    private function generate(string $system, array $schema, callable $validate, ?callable $normalize, string $prompt, array $history, ?array $currentConfig): array
     {
-        $client = new Client(apiKey: $this->apiKey);
+        // adaptive thinking на opus может занимать десятки секунд — 180с запаса
+        $client = new Client(apiKey: $this->apiKey, requestOptions: ['timeout' => 180.0]);
 
         $messages = [];
         foreach ($history as $m) {
@@ -109,9 +126,10 @@ class AiConfigurator
                 throw new \RuntimeException('ИИ вернул неожиданный формат ответа');
             }
 
-            $errors = $validate($parsed['config']);
+            $config = null !== $normalize ? $normalize($parsed['config']) : $parsed['config'];
+            $errors = $validate($config);
             if ([] === $errors) {
-                return ['reply' => (string) ($parsed['reply'] ?? ''), 'config' => $parsed['config']];
+                return ['reply' => (string) ($parsed['reply'] ?? ''), 'config' => $config];
             }
 
             // ретрай: показываем модели её ответ и ошибки валидатора
@@ -164,13 +182,25 @@ class AiConfigurator
             'filters' => ['type' => 'array', 'items' => $field],
         ], 'required' => ['fn', 'alias'], 'additionalProperties' => false];
 
+        // structured outputs требует additionalProperties:false на КАЖДОМ object,
+        // поэтому свободные объекты (time_range, sort) описываем явно
+        $timeRange = ['type' => 'object', 'properties' => [
+            'last_hours' => ['type' => ['integer', 'null']],
+            'from' => ['type' => ['string', 'null']],
+            'to' => ['type' => ['string', 'null']],
+        ], 'additionalProperties' => false];
+        $sort = ['type' => 'object', 'properties' => [
+            'by' => ['type' => 'string'],
+            'dir' => ['type' => 'string', 'enum' => ['asc', 'desc']],
+        ], 'additionalProperties' => false];
+
         $query = ['type' => 'object', 'properties' => [
-            'time_range' => ['type' => 'object'],
+            'time_range' => $timeRange,
             'filters' => ['type' => 'array', 'items' => $field],
             'group_by' => ['type' => 'array', 'items' => ['type' => 'string']],
             'time_bucket' => ['type' => ['string', 'null']],
             'aggregations' => ['type' => 'array', 'items' => $agg],
-            'sort' => ['type' => 'object'],
+            'sort' => $sort,
             'limit' => ['type' => 'integer'],
             'sample' => ['type' => ['number', 'null']],
             'top_n_other' => ['type' => 'boolean'],
@@ -204,7 +234,10 @@ class AiConfigurator
             'position' => ['type' => 'object', 'properties' => [
                 'x' => ['type' => 'number'], 'y' => ['type' => 'number'],
             ], 'required' => ['x', 'y'], 'additionalProperties' => false],
-            'params' => ['type' => 'object'],
+            // params динамичны по типу узла — structured outputs не выражает это
+            // строгой схемой (грамматика раздувается), поэтому просим JSON-строку;
+            // сервер её раскодирует (normalize) и провалидирует по типу узла.
+            'params' => ['type' => 'string', 'description' => 'JSON-объект параметров узла, например {"metric":"engine_temp_c","op":">","value":105}'],
         ], 'required' => ['id', 'type', 'params'], 'additionalProperties' => false];
 
         $edge = ['type' => 'object', 'properties' => [
