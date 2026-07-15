@@ -14,3 +14,19 @@ services:
             $user: '%env(CLICKHOUSE_USER)%'
             $password: '%env(CLICKHOUSE_PASSWORD)%'
             $database: '%env(CLICKHOUSE_DB)%'
+
+    App\Ai\PromptBuilder:
+        arguments:
+            $promptsDir: '%kernel.project_dir%/prompts'
+            $examplesDir: '/docs/examples'
+
+    App\Ai\AiConfigurator:
+        arguments:
+            $apiKey: '%env(ANTHROPIC_API_KEY)%'
+            $model: '%env(ANTHROPIC_MODEL)%'
+
+    # ai_enabled доступен во всех шаблонах (чат-панели рендерятся только с ключом);
+    # тег twig.extension добавляется autoconfigure по AbstractExtension
+    App\Twig\AiEnabledExtension:
+        arguments:
+            $apiKey: '%env(ANTHROPIC_API_KEY)%'

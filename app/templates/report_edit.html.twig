@@ -41,9 +41,16 @@
             </div>
             <ul id="re-errors" class="re-errors"></ul>
         </div>
+
+        {% if ai_enabled %}
+        <div class="re-right">
+            {{ include('_ai_chat.html.twig', {kind: 'report'}) }}
+        </div>
+        {% endif %}
     </div>
 </div>
 
 <script src="/reports.js"></script>
 <script src="/report_edit.js"></script>
+<script src="/ai_chat.js"></script>
 {% endblock %}

@@ -98,6 +98,15 @@
         .ae-summary { margin: 10px 0; font-size: 13px; white-space: pre-wrap; }
         .ae-props .re-field > label { min-width: 90px; }
         .ae-props label { font-size: 13px; }
+        .re-cols:has(.re-right) { grid-template-columns: 230px 1fr 320px; }
+        .ai-chat { display: flex; flex-direction: column; }
+        .ai-log { max-height: 320px; overflow-y: auto; border: 1px solid #e2e8f0; padding: 8px; margin-bottom: 8px; min-height: 60px; background: #f8fafc; }
+        .ai-msg { padding: 5px 8px; margin: 3px 0; border-radius: 6px; font-size: 13px; white-space: pre-wrap; }
+        .ai-user { background: #e0edfb; align-self: flex-end; }
+        .ai-assistant { background: #fff; border: 1px solid #e2e8f0; }
+        .ai-error { background: #fde8e8; color: #b91c1c; }
+        .ai-input { display: flex; gap: 6px; }
+        .ai-input textarea { flex: 1; padding: 5px; font: inherit; }
     </style>
 </head>
 <body>

@@ -327,6 +327,7 @@
     renderPalette();
     applyConfig(meta);
 
-    // точка входа для чат-панели ИИ (PLAN_AI фаза I3)
+    // точки входа для чат-панели ИИ (PLAN_AI фаза I3)
     window.alertEditorApply = applyConfig;
+    window.alertEditorGetConfig = () => fromDrawflow();
 })();

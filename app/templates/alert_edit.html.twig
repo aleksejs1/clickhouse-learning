@@ -46,9 +46,15 @@
         <div class="ae-props">
             <div class="re-sub">Свойства</div>
             <div id="ae-props-body" class="muted">Выберите узел на канвасе</div>
+            {% if ai_enabled %}
+                <div style="margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 10px">
+                    {{ include('_ai_chat.html.twig', {kind: 'alert'}) }}
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
 <script src="/alert_edit.js"></script>
+<script src="/ai_chat.js"></script>
 {% endblock %}

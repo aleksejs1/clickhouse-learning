@@ -7,7 +7,7 @@
 
 <div class="toolbar">
     <a href="{{ path('app_reportpage_new') }}">+ создать</a>
-    <a href="{{ path('app_reportpage_new') }}?ai=1">+ создать с ИИ</a>
+    {% if ai_enabled %}<a href="{{ path('app_reportpage_new') }}?ai=1">+ создать с ИИ</a>{% endif %}
 </div>
 
 <table>

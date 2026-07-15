@@ -1,0 +1,13 @@
+{# Чат-панель ИИ (docs/AI_ASSISTANT.md §5). Рендерится только при ai_enabled.
+   kind = 'report' | 'alert'; страница задаёт window.ai<Report|Alert>Apply. #}
+{% if ai_enabled %}
+<div class="ai-chat" data-kind="{{ kind }}">
+    <div class="re-sub">Ассистент</div>
+    <div class="ai-log" id="ai-log"></div>
+    <div class="ai-input">
+        <textarea id="ai-prompt" rows="2" placeholder="Опишите, что нужно…"></textarea>
+        <button id="ai-send">Отправить</button>
+    </div>
+    <div id="ai-spinner" class="muted" hidden>Думаю…</div>
+</div>
+{% endif %}

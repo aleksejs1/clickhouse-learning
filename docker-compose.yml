@@ -18,7 +18,9 @@ services:
     user: "1000:1000"
     environment:
       HOME: /tmp
-    volumes: ["./app:/app"]
+    volumes:
+      - ./app:/app
+      - ./docs:/docs:ro          # эталонные конфиги для few-shot промптов ИИ
     working_dir: /app
     depends_on: [clickhouse]
 

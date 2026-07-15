@@ -232,7 +232,7 @@
     function renderAll() { renderWidgetList(); renderForm(); preview(); }
     renderAll();
 
-    // экспорт для чат-панели ИИ (PLAN_AI фаза I3): применить конфиг извне
+    // экспорт для чат-панели ИИ (PLAN_AI фаза I3)
     window.reportEditorApply = (cfg) => {
         config = cfg;
         selected = config.widgets.length ? 0 : -1;
@@ -240,4 +240,5 @@
         $('re-desc').value = config.description || '';
         renderAll();
     };
+    window.reportEditorGetConfig = () => config;
 })();
