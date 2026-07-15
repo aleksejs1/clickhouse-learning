@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "name": "Обзор парка",
+  "description": "Оперативная сводка за сутки: объёмы, машины на линии, расход, нарушения",
+  "widgets": [
+    {
+      "title": "Событий за сутки",
+      "width": 1,
+      "query": {
+        "time_range": {"last_hours": 24},
+        "filters": [],
+        "group_by": [],
+        "aggregations": [{"fn": "count", "alias": "events"}],
+        "compare_previous_period": true
+      },
+      "viz": {"type": "stat"}
+    },
+    {
+      "title": "Машин на линии",
+      "width": 1,
+      "query": {
+        "time_range": {"last_hours": 24},
+        "filters": [],
+        "group_by": [],
+        "aggregations": [{"fn": "uniq", "field": "vehicle_id", "alias": "vehicles"}]
+      },
+      "viz": {"type": "stat"}
+    },
+    {
+      "title": "Средний расход, л/100км",
+      "width": 1,
+      "query": {
+        "time_range": {"last_hours": 24},
+        "filters": [],
+        "group_by": [],
+        "aggregations": [{"fn": "avg", "field": "fuel_consumption_l100", "alias": "l100"}],
+        "compare_previous_period": true
+      },
+      "viz": {"type": "stat"}
+    },
+    {
+      "title": "Нарушений за сутки",
+      "width": 1,
+      "query": {
+        "time_range": {"last_hours": 24},
+        "filters": [],
+        "group_by": [],
+        "aggregations": [{
+          "fn": "count_if",
+          "alias": "violations",
+          "filters": [{"field": "event_type", "op": "in", "value": ["harsh_braking", "speeding"]}]
+        }],
+        "compare_previous_period": true
+      },
+      "viz": {"type": "stat"}
+    },
+    {
+      "title": "События по часам за 7 дней",
+      "width": 3,
+      "query": {
+        "time_range": {"last_hours": 168},
+        "filters": [],
+        "group_by": [],
+        "time_bucket": "hour",
+        "aggregations": [{"fn": "count", "alias": "events"}],
+        "sample": 0.1
+      },
+      "viz": {"type": "line"}
+    }
+  ]
+}

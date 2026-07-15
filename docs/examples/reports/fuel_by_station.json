@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "name": "Расход топлива по заправкам",
+  "description": "Сравнение среднего расхода после заправки на разных АЗС (неделя)",
+  "widgets": [
+    {
+      "title": "Средний расход по заправкам",
+      "width": 2,
+      "query": {
+        "time_range": {"last_hours": 168},
+        "filters": [],
+        "group_by": ["last_fuel_station_id"],
+        "aggregations": [{"fn": "avg", "field": "fuel_consumption_l100", "alias": "avg_l100"}],
+        "sort": {"by": "avg_l100", "dir": "desc"},
+        "limit": 20
+      },
+      "viz": {"type": "bar"}
+    },
+    {
+      "title": "Детально: медиана и p95",
+      "width": 1,
+      "query": {
+        "time_range": {"last_hours": 168},
+        "filters": [],
+        "group_by": ["last_fuel_station_id"],
+        "aggregations": [
+          {"fn": "median", "field": "fuel_consumption_l100", "alias": "median_l100"},
+          {"fn": "p95", "field": "fuel_consumption_l100", "alias": "p95_l100"}
+        ],
+        "sort": {"by": "median_l100", "dir": "desc"},
+        "limit": 10
+      },
+      "viz": {"type": "table"}
+    }
+  ]
+}

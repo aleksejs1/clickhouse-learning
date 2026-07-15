@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "name": "Рейтинг водителей по нарушениям",
+  "description": "Кто чаще всех резко тормозит и превышает скорость (7 дней)",
+  "widgets": [
+    {
+      "title": "Нарушения по водителям, топ-15",
+      "width": 3,
+      "query": {
+        "time_range": {"last_hours": 168},
+        "filters": [],
+        "group_by": ["driver_id"],
+        "aggregations": [
+          {
+            "fn": "count_if",
+            "alias": "violations",
+            "filters": [{"field": "event_type", "op": "in", "value": ["harsh_braking", "speeding"]}]
+          },
+          {"fn": "avg", "field": "speed_kmh", "alias": "avg_speed"}
+        ],
+        "sort": {"by": "violations", "dir": "desc"},
+        "limit": 15
+      },
+      "viz": {"type": "bar"}
+    }
+  ]
+}

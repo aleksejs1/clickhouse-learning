@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "name": "Нарушения: день × регион",
+  "description": "Тепловая карта нарушений за 30 дней",
+  "widgets": [
+    {
+      "title": "Нарушения по дням и регионам",
+      "width": 3,
+      "query": {
+        "time_range": {"last_hours": 720},
+        "filters": [{"field": "event_type", "op": "in", "value": ["harsh_braking", "speeding"]}],
+        "group_by": ["region"],
+        "time_bucket": "day",
+        "aggregations": [{"fn": "count", "alias": "violations"}],
+        "sample": 0.1
+      },
+      "viz": {"type": "heatmap"}
+    }
+  ]
+}

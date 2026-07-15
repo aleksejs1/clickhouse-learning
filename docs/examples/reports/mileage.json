@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "name": "Пробег машин за неделю",
+  "description": "Оценка пробега по одометру: max - min за период",
+  "widgets": [
+    {
+      "title": "Пробег по машинам, км",
+      "width": 3,
+      "query": {
+        "time_range": {"last_hours": 168},
+        "filters": [],
+        "group_by": ["vehicle_id"],
+        "aggregations": [
+          {"fn": "max_minus_min", "field": "odometer_km", "alias": "mileage_km"},
+          {"fn": "avg", "field": "fuel_consumption_l100", "alias": "avg_l100"}
+        ],
+        "sort": {"by": "mileage_km", "dir": "desc"},
+        "limit": 50
+      },
+      "viz": {"type": "table"}
+    }
+  ]
+}
