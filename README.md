@@ -35,6 +35,23 @@ for f in docs/examples/alerts/*.json;  do curl -s -X POST localhost:8081/api/ale
 docker compose exec clickhouse clickhouse-client -u app --password app -d telemetry
 ```
 
+## ИИ-ассистент (опционально)
+
+В редакторах репортов и алертов есть чат-панель: опишите нужное свободным
+текстом — ИИ вернёт готовую конфигурацию. Фича **опциональна и платна**
+(вызовы Anthropic API, ~центы за запрос). Без ключа панели скрыты, всё
+остальное работает.
+
+Включение: положите ключ в `app/.env.local` (файл в `.gitignore`):
+
+```bash
+echo 'ANTHROPIC_API_KEY=sk-ant-...' > app/.env.local
+docker compose restart php
+```
+
+Модель по умолчанию — `claude-opus-4-8` (меняется через `ANTHROPIC_MODEL`).
+Эндпоинты ИИ доступны всем, кто видит порт, — не выставляйте проект наружу.
+
 ## Документация
 
 | Файл | Содержание |

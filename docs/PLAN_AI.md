@@ -12,12 +12,12 @@ few-shot'ами, валидаторы замыкают петлю ретрая.
 
 ## Фаза I0 — SDK и деградация без ключа
 
-- [ ] I0.1 `docker compose exec php composer require anthropic-ai/sdk`
-- [ ] I0.2 `.env`: `ANTHROPIC_API_KEY=` (пустой по умолчанию); ключ кладётся в
+- [x] I0.1 `docker compose exec php composer require anthropic-ai/sdk`
+- [x] I0.2 `.env`: `ANTHROPIC_API_KEY=` (пустой по умолчанию); ключ кладётся в
       `app/.env.local` (в .gitignore); параметр в `services.yaml`
-- [ ] I0.3 Маршруты-заглушки `POST /api/ai/report`, `POST /api/ai/alert` → 503
+- [x] I0.3 Маршруты-заглушки `POST /api/ai/report`, `POST /api/ai/alert` → 503
       `{error: "AI не настроен: задайте ANTHROPIC_API_KEY"}` если ключ пуст
-- [ ] I0.4 Флаг `ai_enabled` прокинут во все шаблоны (глобальная переменная Twig
+- [x] I0.4 Флаг `ai_enabled` прокинут во все шаблоны (глобальная переменная Twig
       через twig.yaml globals или контроллеры)
 
 **Проверка:**
@@ -31,13 +31,13 @@ docker compose exec php php -r 'require "vendor/autoload.php"; var_dump(class_ex
 
 ## Фаза I1 — промпты
 
-- [ ] I1.1 `app/prompts/report.md`, `app/prompts/alert.md` — статичные части
+- [x] I1.1 `app/prompts/report.md`, `app/prompts/alert.md` — статичные части
       system prompt: роль, правила, дефолты (AI_ASSISTANT.md §6)
-- [ ] I1.2 `app/src/Ai/PromptBuilder.php` — сборка полного system prompt в
+- [x] I1.2 `app/src/Ai/PromptBuilder.php` — сборка полного system prompt в
       **стабильном порядке**: статичный файл → словарь данных (генерируется из
       `Schema` + значения измерений из констант генератора) → описание формата
       (из `ReportSchema` / дампа `NodeCatalog`) → few-shot из `docs/examples/`
-- [ ] I1.3 Временная консольная команда `app:ai-prompt report|alert` — печатает
+- [x] I1.3 Временная консольная команда `app:ai-prompt report|alert` — печатает
       готовый system prompt (останется как отладочный инструмент)
 
 **Проверка:**
