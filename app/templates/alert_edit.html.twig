@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Редактор алерта{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div id="alert-editor"
+     data-id="{{ id|default('') }}"
+     data-config="{{ config_json }}"
+     data-catalog="{{ catalog_json }}"
+     data-fields="{{ fields_json }}">
+
+    <div class="re-head">
+        <input id="ae-name" placeholder="Название алерта">
+        <input id="ae-desc" placeholder="Описание">
+        <button id="ae-validate">Проверить</button>
+        <button id="ae-save" class="re-primary">Сохранить</button>
+        <a href="{{ path('app_alertpage_list') }}">← к списку</a>
+        <span id="ae-status" class="muted"></span>
+    </div>
+
+    <div class="ae-cols">
+        <div class="ae-palette">
+            <div class="re-sub">Узлы</div>
+            <div id="ae-palette-body"></div>
+        </div>
+
+        <div class="ae-canvas-wrap">
+            <div id="ae-canvas"></div>
+            <div class="ae-tabs">
+                <button data-tab="graph" class="active">Граф</button>
+                <button data-tab="json">JSON</button>
+            </div>
+            <div id="ae-tab-json" hidden>
+                <textarea id="ae-json" spellcheck="false"></textarea>
+                <button id="ae-apply-json">Применить JSON</button>
+            </div>
+            <div id="ae-summary" class="ae-summary muted"></div>
+            <ul id="ae-errors" class="re-errors"></ul>
+        </div>
+
+        <div class="ae-props">
+            <div class="re-sub">Свойства</div>
+            <div id="ae-props-body" class="muted">Выберите узел на канвасе</div>
+        </div>
+    </div>
+</div>
+
+<script src="/alert_edit.js"></script>
+{% endblock %}

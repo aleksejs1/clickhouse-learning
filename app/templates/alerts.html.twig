@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Алерты · Fleet Telemetry Explorer{% endblock %}
+
+{% block content %}
+<h1>Алерты</h1>
+
+<div class="toolbar">
+    <a href="{{ path('app_alertpage_new') }}">+ создать</a>
+    <a href="{{ path('app_alertpage_new') }}?ai=1">+ создать с ИИ</a>
+</div>
+
+<table>
+    <thead>
+    <tr><th>вкл</th><th>название</th><th>что делает</th><th>обновлён</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for a in alerts %}
+        <tr>
+            <td><input type="checkbox" {{ a.enabled ? 'checked' }}
+                       onchange="toggleAlert('{{ a.id }}', this.checked)"></td>
+            <td><a href="{{ path('app_alertpage_edit', {id: a.id}) }}"><b>{{ a.name }}</b></a></td>
+            <td class="muted" style="white-space: normal; max-width: 620px">{{ a.summary }}</td>
+            <td class="muted">{{ a.updated_at }}</td>
+            <td>
+                <a href="{{ path('app_alertpage_edit', {id: a.id}) }}">редактировать</a>
+                &nbsp;<a href="#" onclick="if (confirm('Удалить алерт?')) fetch('/api/alerts/{{ a.id }}', {method: 'DELETE'}).then(() => location.reload()); return false">удалить</a>
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="5" class="muted">Алертов пока нет — создайте первый</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script>
+async function toggleAlert(id, enabled) {
+    const resp = await fetch('/api/alerts/' + id);
+    const data = await resp.json();
+    data.config.enabled = enabled;
+    await fetch('/api/alerts/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data.config),
+    });
+}
+</script>
+{% endblock %}

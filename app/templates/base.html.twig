@@ -77,6 +77,27 @@
         .re-preview { margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
         .re-errors { list-style: none; padding: 0; margin: 10px 0 0; }
         .re-errors li { color: #b91c1c; font-size: 13px; padding: 2px 0; }
+        .ae-cols { display: grid; grid-template-columns: 190px 1fr 280px; gap: 12px; align-items: start; }
+        .ae-palette, .ae-props { background: #fff; border: 1px solid #e2e8f0; padding: 10px; }
+        .ae-cat { font-size: 11px; text-transform: uppercase; color: #94a3b8; margin: 10px 0 4px; }
+        .ae-pal-node { border: 1px solid #e2e8f0; border-left-width: 4px; padding: 5px 8px; margin: 3px 0; cursor: grab; font-size: 13px; background: #f8fafc; }
+        .ae-pal-node.trigger { border-left-color: #f59e0b; } .ae-pal-node.condition { border-left-color: #5b8cc4; } .ae-pal-node.action { border-left-color: #4daf7c; }
+        .ae-canvas-wrap { min-width: 0; }
+        #ae-canvas { height: 560px; background: #f8fafc; border: 1px solid #e2e8f0; background-image: radial-gradient(#e2e8f0 1px, transparent 1px); background-size: 18px 18px; }
+        .drawflow .drawflow-node { border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; background: #fff; min-width: 150px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .drawflow .drawflow-node.trigger { border-top: 3px solid #f59e0b; }
+        .drawflow .drawflow-node.condition { border-top: 3px solid #5b8cc4; }
+        .drawflow .drawflow-node.action { border-top: 3px solid #4daf7c; }
+        .anode { padding: 8px 10px; font-size: 13px; }
+        .anode b { display: block; } .anode small { color: #64748b; }
+        .drawflow .connection .main-path { stroke: #94a3b8; stroke-width: 2px; }
+        .ae-tabs { margin-top: 8px; }
+        .ae-tabs button { border: 1px solid #e2e8f0; background: #f1f5f9; padding: 4px 14px; cursor: pointer; }
+        .ae-tabs button.active { background: #fff; font-weight: 600; }
+        #ae-json { width: 100%; height: 260px; font: 12px/1.4 monospace; margin-top: 8px; }
+        .ae-summary { margin: 10px 0; font-size: 13px; white-space: pre-wrap; }
+        .ae-props .re-field > label { min-width: 90px; }
+        .ae-props label { font-size: 13px; }
     </style>
 </head>
 <body>
@@ -84,6 +105,7 @@
     <a href="/">Fleet Telemetry Explorer</a>
     <a href="/anomalies" style="font-weight: 400; margin-left: 20px">Аномалии</a>
     <a href="/reports" style="font-weight: 400; margin-left: 20px">Репорты</a>
+    <a href="/alerts" style="font-weight: 400; margin-left: 20px">Алерты</a>
 </header>
 <main>
 {% block content %}{% endblock %}
