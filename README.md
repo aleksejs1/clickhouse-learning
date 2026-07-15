@@ -31,7 +31,8 @@ docker compose exec clickhouse clickhouse-client -u app --password app -d teleme
 | Файл | Содержание |
 |---|---|
 | [docs/SPEC.md](docs/SPEC.md) | Техническое задание: стек, архитектура, структура проекта и докеров |
-| [docs/PLAN.md](docs/PLAN.md) | План имплементации: 8 фаз с шагами-чекбоксами и проверками |
+| [docs/PLAN.md](docs/PLAN.md) | План имплементации ядра: 8 фаз с шагами-чекбоксами и проверками |
+| [docs/PLAN_REPORTS.md](docs/PLAN_REPORTS.md), [PLAN_ALERTS.md](docs/PLAN_ALERTS.md), [PLAN_AI.md](docs/PLAN_AI.md) | Планы имплементации репортов, алертов и ИИ-ассистента |
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Схема таблицы ClickHouse, словарь полей, генератор данных и заложенные аномалии |
 | [docs/API.md](docs/API.md) | HTTP API, страницы веб-интерфейса, готовые SQL-рецепты для графиков |
 | [docs/REPORTS.md](docs/REPORTS.md) | ТЗ: конфигуратор репортов (борды из виджетов, декларативный JSON) |
