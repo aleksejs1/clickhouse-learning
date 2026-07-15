@@ -52,6 +52,31 @@
         .stat-delta.up { color: #15803d; } .stat-delta.down { color: #b91c1c; }
         .rtable { font-size: 13px; } .rtable td, .rtable th { padding: 3px 8px; white-space: normal; }
         .hm td { text-align: center; font-size: 11px; padding: 2px 4px; }
+        .re-head { display: flex; gap: 10px; align-items: center; margin: 12px 0; }
+        .re-head input { padding: 5px 8px; }
+        #re-name { width: 260px; font-weight: 600; } #re-desc { flex: 1; }
+        .re-primary { background: #0f172a; color: #fff; border: none; padding: 6px 16px; cursor: pointer; }
+        .re-cols { display: grid; grid-template-columns: 230px 1fr; gap: 16px; align-items: start; }
+        .re-left, .re-center { background: #fff; border: 1px solid #e2e8f0; padding: 12px; }
+        .re-sub { font-weight: 600; margin-bottom: 8px; }
+        #re-widget-list { list-style: none; padding: 0; margin: 0 0 10px; }
+        #re-widget-list li { padding: 6px 8px; border: 1px solid #e2e8f0; margin-bottom: 4px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+        #re-widget-list li.sel { border-color: #f59e0b; background: #fffbeb; }
+        #re-widget-list li span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #re-widget-list li button { border: none; background: none; cursor: pointer; color: #64748b; padding: 0 3px; }
+        .re-tabs button { border: 1px solid #e2e8f0; background: #f1f5f9; padding: 4px 14px; cursor: pointer; }
+        .re-tabs button.active { background: #fff; border-bottom-color: #fff; font-weight: 600; }
+        .re-field { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+        .re-field > label { min-width: 120px; color: #64748b; }
+        .re-field select, .re-field input { padding: 4px 6px; }
+        .re-group { border: 1px solid #e2e8f0; padding: 8px 10px; margin: 8px 0; }
+        .re-group > b { display: block; margin-bottom: 6px; }
+        .re-row { display: flex; gap: 6px; align-items: center; margin: 4px 0; flex-wrap: wrap; }
+        .re-row button.rm { color: #b91c1c; }
+        #re-json { width: 100%; height: 340px; font: 12px/1.4 monospace; }
+        .re-preview { margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+        .re-errors { list-style: none; padding: 0; margin: 10px 0 0; }
+        .re-errors li { color: #b91c1c; font-size: 13px; padding: 2px 0; }
     </style>
 </head>
 <body>

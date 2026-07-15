@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Редактор репорта{% endblock %}
+
+{% block content %}
+<div id="report-editor"
+     data-id="{{ id|default('') }}"
+     data-config="{{ config_json }}"
+     data-schema="{{ schema_json }}">
+
+    <div class="re-head">
+        <input id="re-name" placeholder="Название репорта">
+        <input id="re-desc" placeholder="Описание">
+        <button id="re-save" class="re-primary">Сохранить</button>
+        <a href="{{ path('app_reportpage_list') }}">← к списку</a>
+        <span id="re-status" class="muted"></span>
+    </div>
+
+    <div class="re-cols">
+        <div class="re-left">
+            <div class="re-sub">Виджеты</div>
+            <ul id="re-widget-list"></ul>
+            <button id="re-add-widget">+ виджет</button>
+        </div>
+
+        <div class="re-center">
+            <div class="re-tabs">
+                <button data-tab="form" class="active">Форма</button>
+                <button data-tab="json">JSON</button>
+            </div>
+            <div id="re-tab-form">
+                <div id="re-form"></div>
+                <div class="re-preview">
+                    <div class="re-sub">Предпросмотр</div>
+                    <div id="re-preview-body" class="rgrid" style="grid-template-columns: 1fr"></div>
+                </div>
+            </div>
+            <div id="re-tab-json" hidden>
+                <textarea id="re-json" spellcheck="false"></textarea>
+                <button id="re-apply-json">Применить JSON</button>
+            </div>
+            <ul id="re-errors" class="re-errors"></ul>
+        </div>
+    </div>
+</div>
+
+<script src="/reports.js"></script>
+<script src="/report_edit.js"></script>
+{% endblock %}
