@@ -18,6 +18,16 @@ docker compose exec php composer install
 docker compose exec php bin/console app:generate-events 100000
 ```
 
+> **Каталог проекта принадлежит не uid 1000** (частый случай на сервере под
+> root)? `composer install` упадёт с `/app/vendor does not exist and could not
+> be created`. php-контейнер по умолчанию работает под uid 1000 и не может
+> писать в чужой bind-mount. Задайте свой uid перед запуском:
+> ```bash
+> cp .env.example .env && sed -i "s/1000/$(id -u)/g; s/APP_GID=.*/APP_GID=$(id -g)/" .env
+> docker compose up -d          # подхватит APP_UID/APP_GID из .env
+> ```
+> (или разово: `APP_UID=$(id -u) APP_GID=$(id -g) docker compose up -d`).
+
 Открыть http://localhost:8081 — таблица событий. Клик по строке → страница события с графиками.
 В шапке: **Аномалии** (автопоиск), **Репорты** (конструктор бордов),
 **Алерты** (конструктор графов в стиле n8n, только конфигурация).

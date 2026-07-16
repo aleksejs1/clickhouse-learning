@@ -14,8 +14,12 @@ services:
 
   php:
     build: docker/php
-    # host-пользователь, чтобы app/var и vendor не принадлежали root
-    user: "1000:1000"
+    # UID/GID host-пользователя, чтобы app/vendor и app/var были ему доступны на
+    # запись (bind-mount ./app:/app). По умолчанию 1000 (типичный dev-юзер);
+    # на root-овском чекауте (например, сервер) задайте APP_UID/APP_GID:
+    #   APP_UID=$(id -u) APP_GID=$(id -g) docker compose up -d
+    # или пропишите их в корневой .env рядом с docker-compose.yml.
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
     environment:
       HOME: /tmp
     volumes:
